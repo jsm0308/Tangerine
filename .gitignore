@@ -1,0 +1,18 @@
+outputs/
+
+# 클래스별 실사/학습 이미지(용량·라이선스) — 필요 시 로컬·별도 스토리지에서 관리
+data/Fruits/
+
+# 로컬 전용 비밀 (Seraph SSH 등) — 한 파일만 사용
+local/aurora_seraph_credentials.txt
+# legacy singular output dir (before variants moved under outputs/)
+output/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.pt
+*.onnx
+runs/
+wandb/

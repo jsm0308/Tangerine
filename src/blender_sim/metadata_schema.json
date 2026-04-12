@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/smart-factory/frame_metadata.json",
+  "title": "Blender frame metadata JSONL record",
+  "description": "One JSON object per line in frame_metadata.jsonl. Emitted by src/blender_sim/simulation.py for GT labels and optional 2D bbox evaluation.",
+  "type": "object",
+  "required": ["frame_index", "object_uid", "gt_disease_class"],
+  "properties": {
+    "frame_index": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Scene frame number (1-based)."
+    },
+    "object_uid": {
+      "type": "string",
+      "description": "Unique object name in Blender (e.g. Citrus_000)."
+    },
+    "gt_disease_class": {
+      "type": "string",
+      "description": "Ground-truth disease label assigned at spawn (matches inference.class_names)."
+    },
+    "bbox_xyxy": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Optional axis-aligned 2D bbox in pixel coordinates [x_min, y_min, x_max, y_max] from camera projection."
+    },
+    "world_location": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Optional world-space origin of object after simulation step."
+    }
+  },
+  "additionalProperties": true
+}

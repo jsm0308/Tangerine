@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Report {{ experiment_id }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 960px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>Experiment {{ experiment_id }}</h1>
+  <p>Top-1 accuracy (matched GT): <strong>{{ (accuracy * 100)|round(2) }}%</strong></p>
+  <p>Matched GT pairs: {{ total_matched }}</p>
+  <h2>Disease counts (above threshold)</h2>
+  <table>
+    <tr><th>Class</th><th>Count</th></tr>
+    {% for k, v in disease_counts.items() %}
+    <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+    {% else %}
+    <tr><td colspan="2">No data</td></tr>
+    {% endfor %}
+  </table>
+  <p>Full data: <a href="{{ csv_name }}">{{ csv_name }}</a></p>
+</body>
+</html>

@@ -1,0 +1,47 @@
+# Copy or override values; use: python main.py --stage all --config configs/default_config.yaml
+
+experiment:
+  experiment_id: "Exp_001"
+  base_output_dir: "outputs"
+  seed: 42
+  log_level: "INFO"
+
+blender:
+  # Windows 기본 설치 (5.x). 다른 위치면 수정하세요.
+  blender_executable: "C:/Program Files/Blender Foundation/Blender 5.1/blender.exe"
+  assets_root: "assets"
+  citrus_count_min: 2
+  citrus_count_max: 4
+  belt_speed: 1.2
+  physics_substeps: 10
+  episode_frame_count: 24
+  render_width: 640
+  render_height: 480
+  render_fps: 24
+
+augment:
+  motion_blur_max_kernel: 15
+  motion_blur_probability: 0.5
+  gaussian_noise_std_min: 2.0
+  gaussian_noise_std_max: 12.0
+  jpeg_quality_min: 65
+  jpeg_quality_max: 92
+  augment_order:
+    - motion_blur
+    - gaussian_noise
+    - jpeg
+
+inference:
+  detector_weights: "yolov8n.pt"
+  classifier_weights: ""
+  conf_threshold: 0.25
+  tracker: "bytetrack.yaml"
+  class_names:
+    - Normal
+    - Canker
+    - Scab
+    - Black_spot
+
+report:
+  include_html: true
+  crop_resize_max: 256
