@@ -90,16 +90,12 @@ python main.py --stage all --config configs/default_config.yaml
 
 ### 컨베이어 데모 (`scripts/run_conveyor_demo.py`)
 
-- **시나리오·물리·렌더** 기본값: `src/blender_sim/conveyor_demo/defaults.py` — 생성되는 `outputs/.../conveyor_demo.json`으로도 덮어쓸 수 있음.  
-- **영상(MP4) + `.blend` 둘 다** — 기본 실행이 PNG→MP4이며, 씬 파일도 남기려면:
-
-  `python scripts/run_conveyor_demo.py --also-blend`
-
-- **영상 없이 `.blend`만(빠른 물리 확인)** — `python scripts/run_conveyor_demo.py --preview-blend --no-video`
-
-- **GPU 렌더(Cycles)** — 기본이 GPU(`cycles_compute_device`). 드라이버/장치가 없으면 자동으로 CPU로 떨어질 수 있음.  
-- **GLB는 종류당 1회만 임포트** 후 인스턴스 복제(`use_glb_instance_cache`) — 프레임마다 glTF 다시 읽지 않음.  
-- **Seraph(Aurora)** — SSH **별칭 복붙**: `local/ssh_config_snippet_aurora_seraph.txt` → `~/.ssh/config` 에 붙이기. 비밀번호만: `local/aurora_seraph_credentials.txt` (Git 무시). **원격에서 GLB·컨베이어까지**: [docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md).
+- **상세(물리 조정·GLB 캐시·Seraph 명령)**: [docs/CONVEYOR_DEMO.md](docs/CONVEYOR_DEMO.md)  
+- **로컬 vs Seraph에 무엇을 두는지**: [docs/SERAPH_AND_LOCAL.md](docs/SERAPH_AND_LOCAL.md)  
+- **시나리오 기본값**: `src/blender_sim/conveyor_demo/defaults.py`  
+- **영상(MP4) + `.blend`**: `python scripts/run_conveyor_demo.py --also-blend`  
+- **`.blend`만(렌더 생략)**: `python scripts/run_conveyor_demo.py --preview-blend --no-video`  
+- **Seraph 접속·Conda**: [docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md) · SSH 스니펫 `local/ssh_config_snippet_aurora_seraph.txt` · 비밀번호만 `local/aurora_seraph_credentials.txt` (Git 무시)
 
 ---
 
@@ -125,11 +121,14 @@ python main.py --stage all --config configs/default_config.yaml
 
 ## 관련 문서
 
-- **[docs/PIPELINE.md](docs/PIPELINE.md)** — **0~4단계 순서**로 메인 파이프라인 전체(명령·입력·출력), 메인 외 경로(컨베이어 데모·GLB 빌드·전처리), 라벨·XAI·향후 확장  
-- **[docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md)** — Aurora Seraph SSH 별칭·Cursor Remote-SSH·서버에서 변종 GLB / 컨베이어 데모 실행 순서  
-- [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보 한 페이지 요약  
-- [CONFIG_KEYS.md](CONFIG_KEYS.md) — 설정 키 전체 표  
-- [assets/README.txt](assets/README.txt) — healthy GLB 빌드 경로
+- **[docs/INDEX.md](docs/INDEX.md)** — 문서 색인 (여기서부터)  
+- **[docs/PIPELINE.md](docs/PIPELINE.md)** — 메인 0~4단계, 부가 경로(B·컨베이어) 표  
+- **[docs/CONVEYOR_DEMO.md](docs/CONVEYOR_DEMO.md)** — 컨베이어 물리·GLB 캐시·Seraph 실행  
+- **[docs/SERAPH_AND_LOCAL.md](docs/SERAPH_AND_LOCAL.md)** — 로컬 vs Seraph 파일·산출물  
+- **[docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md)** — SSH·Conda·Blender 준비  
+- [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보  
+- [CONFIG_KEYS.md](CONFIG_KEYS.md) — 설정 키 표  
+- [assets/README.txt](assets/README.txt) — 에셋 경로
 
 ---
 

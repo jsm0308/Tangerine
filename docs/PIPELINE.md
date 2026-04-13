@@ -106,10 +106,11 @@
 
 | 순서 | 이름 | 진입 | 나오는 것 | 비고 |
 |------|------|------|-----------|------|
-| A | 롤러 컨베이어 데모 | `python scripts/run_conveyor_demo.py` | 기본 `conveyor_run.mp4` (중간 PNG는 삭제) | 시나리오는 `conveyor_demo/defaults.py`·생성 `conveyor_demo.json`; 촘촘한 롤러·다리·배치 스폰·`data/` GLB |
+| A | 롤러 컨베이어 데모 | `python scripts/run_conveyor_demo.py` | 기본 `conveyor_run.mp4` (중간 PNG는 삭제) | [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md) — 물리·GLB 캐시·Seraph 실행; `conveyor_demo/defaults.py` |
 | B | Healthy GLB 81종 빌드 | `python scripts/healthy_variants_build.py` | `outputs/.../healthy_variants_glb/*.glb` | **에셋 생성**; 학습용 프레임 메타와 직접 연결되지 않음 |
-| B1 | 베이스 GLB 3종 | `python scripts/build_base_mesh.py` (`configs/base_mesh.yaml`) | `assets/glb/*.glb` | 아이코스피어 등 단일 메시(꼭지 없음); 변종 전에 필수 |
-| B2 | 병해 절차적 재질 변종 | `python scripts/generate_variants_build.py` (`configs/variants_batch.yaml`) | `outputs/_variant_glb/*.glb` + `manifest.json` | B1 이후; 3×병해 5×형태 그리드(405) |
+| B1 | 베이스 GLB 3종 | `python scripts/build_base_mesh.py` (`configs/base_mesh.yaml`) | `assets/glb/*.glb` | 아이코스피어 + **Smart UV**; 변종 전에 필수 |
+| B1a | 병해 알베도 PNG | `python scripts/gen_disease_texture_masks.py` | `assets/textures/disease/*_albedo.png` | B2 전에 한 번 (또는 색 바꿀 때) |
+| B2 | 병해 재질 변종 (UV+이미지) | `python scripts/generate_variants_build.py` (`configs/variants_batch.yaml`) | `outputs/_variant_glb/*.glb` + `manifest.json` | B1·B1a 이후; 3×병해 5×형태 그리드(405) |
 | C | 원천 이미지 전처리 | `scripts/remove_bg_crop_fruits.py`, `balance_fruits_by_class.py` 등 | `data/` 쪽 폴더 | **학습 데이터 준비**용; 파이프라인 필수 단계 아님 |
 
 **학습·리포트 GT 정본**은 **`simulation.py` 줄기(1단계)** 로 두는 것을 권장합니다.
