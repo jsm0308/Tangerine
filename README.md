@@ -125,6 +125,7 @@ python main.py --stage all --config configs/default_config.yaml
 - **[docs/PIPELINE.md](docs/PIPELINE.md)** — 메인 0~4단계, 부가 경로(B·컨베이어) 표  
 - **[docs/CONVEYOR_DEMO.md](docs/CONVEYOR_DEMO.md)** — 컨베이어 물리·GLB 캐시·Seraph 실행  
 - **[docs/SERAPH_AND_LOCAL.md](docs/SERAPH_AND_LOCAL.md)** — 로컬 vs Seraph 파일·산출물  
+- **[docs/SERAPH_SYNC.md](docs/SERAPH_SYNC.md)** — **코드 Seraph에 올리기 / Seraph에서 내리기 / 실행**  
 - **[docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md)** — SSH·Conda·Blender 준비  
 - [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보  
 - [CONFIG_KEYS.md](CONFIG_KEYS.md) — 설정 키 표  

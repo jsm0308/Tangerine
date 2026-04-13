@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -59,7 +60,22 @@ def _add_primitive(spec: dict, defaults: dict) -> bpy.types.Object:
         obj.scale = (float(sc[0]), float(sc[1]), float(sc[2]))
     bpy.ops.object.transform_apply(scale=True)
     bpy.ops.object.shade_smooth()
+    _ensure_smart_uv(obj)
     return obj
+
+
+def _ensure_smart_uv(obj: bpy.types.Object) -> None:
+    """glTF 알베도 매핑용 — 아이코스피어 등에 UV 레이어가 없으면 생성 후 Smart Project."""
+    mesh = obj.data
+    if mesh.uv_layers.active is None:
+        mesh.uv_layers.new(name="UVMap")
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66.0), island_margin=0.02)
+    bpy.ops.object.mode_set(mode="OBJECT")
 
 
 def _orange_material(name: str, mat_cfg: dict):

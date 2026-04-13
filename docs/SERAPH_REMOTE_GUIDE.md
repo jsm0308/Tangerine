@@ -69,9 +69,51 @@ blender --version
 
 ---
 
-## 6. 다음 단계
+## 6. 변종 GLB 전체 빌드 (Seraph)
 
-- 변종 GLB: `python scripts/generate_variants_build.py` → `outputs/_variant_glb/`
+**Seraph에 이미 SSH·Conda·Blender·`git pull` 된 레포가 있다고 가정한다.**
+
+### A) Seraph 셸에서 직접
+
+```bash
+cd /data/minjae051213/Tangerine
+git pull   # 선택
+chmod +x scripts/seraph_build_variant_glb.sh   # 최초 1회
+./scripts/seraph_build_variant_glb.sh
+```
+
+또는:
+
+```bash
+bash scripts/seraph_build_variant_glb.sh
+```
+
+선택 환경 변수: `SERAPH_REPO_ROOT`, `SERAPH_GIT_PULL=1`(스크립트 안에서 pull).
+
+### B) 로컬 PC에서 SSH로 원격 실행
+
+```bash
+python scripts/seraph_build_variants_remote.py
+# 원격에서 pull 까지:
+python scripts/seraph_build_variants_remote.py --pull
+```
+
+`--host aurora-seraph`, `--remote-root /data/.../Tangerine` 으로 바꿀 수 있다.
+
+산출: Seraph 디스크의 `outputs/_variant_glb/*.glb` + `manifest.json` (로컬과 자동 동기화 안 됨 — 필요 시 scp/rsync).
+
+### C) 한 단계만
+
+- 알베도 PNG만: `python scripts/gen_disease_texture_masks.py`
+- 베이스 GLB만: `python scripts/build_base_mesh.py`
+- 변종만(텍스처·베이스 이미 있을 때): `python scripts/generate_variants_build.py`
+
+Blender 경로는 `configs/default_config.yaml` 의 `blender_executable` 또는 Seraph `PATH` 의 `blender`.
+
+---
+
+## 7. 다음 단계 (컨베이어 등)
+
 - 컨베이어: [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md) §5
 
 GPU 렌더는 `defaults.py` 의 `cycles_compute_device`; 드라이버 없으면 CPU로 떨어질 수 있음.
