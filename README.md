@@ -23,40 +23,47 @@ Tangerine/
 ├── main.py                 # CLI: blender | augment | infer | report | all
 ├── config.py               # PipelineConfig (dataclass), YAML 병합
 ├── configs/
-│   ├── README.txt            # base_mesh / variants_batch / default 역할
-│   ├── default_config.yaml   # 전역 파이프라인 + Blender 경로
-│   ├── base_mesh.yaml        # 베이스 GLB (단일 프리미티브)
-│   └── variants_batch.yaml   # 병해 변종 배치
+│   ├── README.txt            # default_config 역할
+│   └── default_config.yaml   # 전역 파이프라인 + Blender 경로
+├── data/
+│   └── Tangerine_3D/         # 귤 3D 에셋·설정·변종 산출 (glb, textures, configs, outputs)
 ├── CONFIG_KEYS.md          # 설정 키 참조표
 ├── requirements.txt
 ├── README.md                 # 이 파일
+├── Conveyor_Lab/           # 롤러 컨베이어 실험: 스크립트·문서·기본 산출 (코드는 src/blender_sim/conveyor/)
 ├── docs/
-│   └── PIPELINE.md           # 전체 파이프라인 상세 (데이터 흐름·Blender 분기·산출물)
+│   ├── PIPELINE.md           # 전체 파이프라인 상세
+│   ├── REPOSITORY.md         # 핵심 폴더·파일 안내
+│   └── …                     # CONVEYOR_DEMO(리다이렉트), SERAPH, DISEASE_MATERIALS 등 (INDEX.md)
 ├── assets/
-│   └── README.txt            # GLB·텍스처 배치 안내
+│   └── README.txt            # → data/Tangerine_3D 안내
 ├── scripts/
 │   ├── healthy_variants_build.py # 81종 형태 GLB + healthy 텍스처 배치
-│   ├── build_base_mesh.py         # 베이스 GLB 3종 (configs/base_mesh.yaml)
-│   ├── generate_variants_build.py # 병해 변종 GLB (configs/variants_batch.yaml)
+│   ├── build_base_mesh.py         # (선택) 아이코스피어 베이스 — 기본은 data/Tangerine_3D/glb
+│   ├── generate_variants_build.py # 병해 변종 GLB (data/Tangerine_3D/configs/variants_batch.yaml)
+│   ├── variant_qc_pipeline.py     # 렌더 QC 루프(실패 시 disease_params 보정·재빌드)
+│   ├── qc_preview_only.py        # 기존 GLB 미리보기 PNG + 수치 QC만
 │   ├── fruit_class_mesh_build.py # 클래스별 GLB 배치 (data/Fruits/)
-│   ├── run_conveyor_demo.py      # 롤러 컨베이어 + data/ GLB(또는 구) → MP4
+│   ├── run_conveyor_demo.py      # → Conveyor_Lab/scripts/ (호환)
+│   ├── export_conveyor_glb.py    # → Conveyor_Lab/scripts/ (호환)
 │   ├── balance_fruits_by_class.py # 클래스별 장수 밸런싱(복제)
 │   ├── remove_bg_crop_fruits.py   # rembg 배경 제거·크롭
 │   ├── png_to_jpg_flatten_fruits.py
 │   └── run_blender_headless.sh
 ├── src/
 │   ├── blender_sim/          # Blender 전용 (bpy)
-│   │   ├── blender_entry.py      # main.py --stage blender 진입점
-│   │   ├── simulation.py         # 벨트·리지드바디·렌더·frame_metadata.jsonl
-│   │   ├── conveyor_entry.py + conveyor_demo/  # 프로시저 롤러 컨베이어 데모
-│   │   ├── healthy_variants_entry.py / healthy_variants_export.py
+│   │   ├── entries/              # `blender --python` 진입 스크립트만 모음
+│   │   ├── conveyor/             # 롤러 컨베이어 데모 (물리·스폰·렌더)
+│   │   ├── simulation.py         # 메인 시뮬 벨트·렌더·frame_metadata.jsonl
+│   │   ├── healthy_variants_export.py / fruit_class_mesh_export.py
 │   │   ├── export_base_mesh.py   # (Blender) base_mesh job → GLB
-│   │   ├── generate_variants.py / disease_materials.py  # 변종 GLB (절차적 병해 재질)
+│   │   ├── generate_variants.py / disease_materials.py
 │   │   └── metadata_schema.json
-│   ├── augment_2d/
-│   │   └── pipeline.py       # 모션 블러·가우시안·JPEG
+│   ├── augment/
+│   │   └── pipeline.py       # 렌더 PNG 2D 증강 (모션 블러·가우시안·JPEG)
 │   ├── inference/
-│   │   └── pipeline.py       # YOLO detect + track + (선택) classify
+│   │   ├── pipeline.py / backends.py  # 검출 백엔드 분기
+│   │   └── preprocess/      # 벨트 슬롯·트리거 (YAML 키는 여전히 `preprocess`)
 │   └── reporting/
 │       ├── generate.py       # report.md, HTML, crops, CSV
 │       └── templates/report.html.j2
@@ -88,14 +95,10 @@ python main.py --stage all --config configs/default_config.yaml
 
 개별 단계: `augment`, `infer`, `report`.
 
-### 컨베이어 데모 (`scripts/run_conveyor_demo.py`)
+### 컨베이어 데모 (`Conveyor_Lab/`)
 
-- **상세(물리 조정·GLB 캐시·Seraph 명령)**: [docs/CONVEYOR_DEMO.md](docs/CONVEYOR_DEMO.md)  
-- **로컬 vs Seraph에 무엇을 두는지**: [docs/SERAPH_AND_LOCAL.md](docs/SERAPH_AND_LOCAL.md)  
-- **시나리오 기본값**: `src/blender_sim/conveyor_demo/defaults.py`  
-- **영상(MP4) + `.blend`**: `python scripts/run_conveyor_demo.py --also-blend`  
-- **`.blend`만(렌더 생략)**: `python scripts/run_conveyor_demo.py --preview-blend --no-video`  
-- **Seraph 접속·Conda**: [docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md) · SSH 스니펫 `local/ssh_config_snippet_aurora_seraph.txt` · 비밀번호만 `local/aurora_seraph_credentials.txt` (Git 무시)
+- **한 문서로 정리**: [Conveyor_Lab/docs/CONVEYOR.md](Conveyor_Lab/docs/CONVEYOR.md) — 루트 `scripts/run_conveyor_demo.py` 는 동일 스크립트로 연결  
+- **Seraph·Git·SSH**: [docs/SERAPH.md](docs/SERAPH.md) — 컨베이어 예시는 그 문서 §8, 스니펫은 `local/ssh_config_snippet_aurora_seraph.txt`
 
 ---
 
@@ -122,11 +125,10 @@ python main.py --stage all --config configs/default_config.yaml
 ## 관련 문서
 
 - **[docs/INDEX.md](docs/INDEX.md)** — 문서 색인 (여기서부터)  
+- **[docs/REPOSITORY.md](docs/REPOSITORY.md)** — **핵심 폴더·파일** 한눈 요약  
 - **[docs/PIPELINE.md](docs/PIPELINE.md)** — 메인 0~4단계, 부가 경로(B·컨베이어) 표  
-- **[docs/CONVEYOR_DEMO.md](docs/CONVEYOR_DEMO.md)** — 컨베이어 물리·GLB 캐시·Seraph 실행  
-- **[docs/SERAPH_AND_LOCAL.md](docs/SERAPH_AND_LOCAL.md)** — 로컬 vs Seraph 파일·산출물  
-- **[docs/SERAPH_SYNC.md](docs/SERAPH_SYNC.md)** — **코드 Seraph에 올리기 / Seraph에서 내리기 / 실행**  
-- **[docs/SERAPH_REMOTE_GUIDE.md](docs/SERAPH_REMOTE_GUIDE.md)** — SSH·Conda·Blender 준비  
+- **[Conveyor_Lab/docs/CONVEYOR.md](Conveyor_Lab/docs/CONVEYOR.md)** — 컨베이어 데모 전용 (실행·산출·설정)  
+- **[docs/SERAPH.md](docs/SERAPH.md)** — **Seraph 한 문서:** 로컬 vs 서버, Git, SSH·Conda·Blender, 실행, 변종 GLB  
 - [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보  
 - [CONFIG_KEYS.md](CONFIG_KEYS.md) — 설정 키 표  
 - [assets/README.txt](assets/README.txt) — 에셋 경로

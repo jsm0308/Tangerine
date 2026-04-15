@@ -1,7 +1,20 @@
-outputs/
+# 루트 outputs/ 전체 무시 (실험 산출·변종 GLB outputs/_variant_glb 포함 — 바이너리는 커밋 안 함)
+/outputs/
+
+# 컨베이어 실험실 산출 (폴더 트리만 유지)
+Conveyor_Lab/outputs/*
+!Conveyor_Lab/outputs/.gitkeep
 
 # 클래스별 실사/학습 이미지(용량·라이선스) — 필요 시 로컬·별도 스토리지에서 관리
 data/Fruits/
+data/Tangerine_2D/
+
+# 이전 빌드 산출(변종 GLB는 레포 루트 outputs/_variant_glb 에 통일; 여기는 중복 보관 시 무시)
+data/Tangerine_3D/outputs/
+
+# 로컬 데이터/노트북 덤프(zip은 레포에 넣지 않음)
+/Tangerine_2D_AI.zip
+/data/Tangerine_2D.zip
 
 # 로컬 전용 비밀 (Seraph SSH 등) — 한 파일만 사용
 local/aurora_seraph_credentials.txt

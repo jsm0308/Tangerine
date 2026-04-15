@@ -1,0 +1,26 @@
+# =============================================================================
+# 베이스 GLB 전용 — 과일 몸체 하나만 (꼭지·다중 오브젝트 없음)
+# =============================================================================
+# UV 구(primitive_uv_sphere)는 극 근처 메쉬가 눈에 띄어 기본 도형 데모에 부적합.
+# 기본값은 아이코스피어(삼각형이 더 균일). 필요 시 아래 primitive 만 변경.
+#
+# 빌드:  python scripts/build_base_mesh.py (exports 가 비어 있으면 아무 것도 생성 안 함)
+# 산출:  output_dir 아래 {asset_name}.glb (기본 data/Tangerine_3D/glb/)
+# 베이스 귤 메시는 보통 작업자가 만든 tangerine0/1/2.glb 를 data/Tangerine_3D/glb/ 에 두고
+# variants_batch.yaml 만 참조한다.
+# =============================================================================
+
+output_dir: data/Tangerine_3D/glb
+
+defaults:
+  primitive: icosphere
+  radius: 1.0
+  # 위치는 항상 원점 근처 단일 오브젝트
+
+material:
+  base_color: [0.9, 0.42, 0.12, 1.0]
+  roughness: 0.55
+  specular_ior_level: 0.35
+
+# 아이코스피어 프리셋을 쓰려면 아래 exports 에 블록을 다시 채운다.
+exports: []

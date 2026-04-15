@@ -6,4 +6,4 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CFG="${1:-$ROOT/outputs/Exp_001/blender_config.json}"
-exec blender --background --python "$ROOT/src/blender_sim/blender_entry.py" -- "$CFG"
+exec blender --background --python "$ROOT/src/blender_sim/entries/blender_entry.py" -- "$CFG"

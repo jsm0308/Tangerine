@@ -4,7 +4,7 @@
 
   python scripts/gen_disease_texture_masks.py
 
-산출: assets/textures/disease/{black_spot,canker,greening,scab}_albedo.png
+산출: data/Tangerine_3D/textures/disease/{black_spot,canker,greening,scab}_albedo.png
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT / "assets" / "textures" / "disease"
+OUT_DIR = ROOT / "data" / "Tangerine_3D" / "textures" / "disease"
 
 # variants_batch.yaml disease_params 와 맞춤 (RGB 0–1)
 def smoothstep(edge0, edge1, x: np.ndarray) -> np.ndarray:

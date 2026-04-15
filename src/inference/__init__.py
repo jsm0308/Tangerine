@@ -1,6 +1,6 @@
 """
-Inference: YOLO detection + tracking, then crop-level classification for full softmax vectors.
+Inference: detection backends + tracking + disease probabilities + belt-slot preprocess.
 
-Detection answers \"where\"; classification answers \"which disease distribution\" per crop.
-If `classifier_weights` is unset, emits a uniform probability vector over `class_names` (placeholder).
+- `pipeline.run_inference` — entry point (dispatches via `backends.dispatch_inference`).
+- `preprocess` — triggers and `belt_slot_index` helpers (YAML key remains `preprocess`).
 """

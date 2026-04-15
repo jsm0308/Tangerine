@@ -4,15 +4,17 @@
 
 실행:
   blender --background --python src/blender_sim/generate_variants.py \\
-          -- --config configs/variants_batch.yaml
+          -- --config data/Tangerine_3D/configs/variants_batch.yaml
 
   # 실제 내보내기 없이 목록만 확인:
   blender --background --python src/blender_sim/generate_variants.py \\
-          -- --config configs/variants_batch.yaml --dry-run
+          -- --config data/Tangerine_3D/configs/variants_batch.yaml --dry-run
 
 출력:
-  <output_dir>/<base>__<disease>__s<N>__q<N>__h<N>.glb   (N = 1-based index)
+  output_name_style short: <base>__<disease>.glb
+  output_name_style full:  <base>__<disease>__s<N>__q<N>__h<N>__c<N>.glb
   <output_dir>/manifest.json
+  기본 설정은 베이스 GLB 수 × 병해 종 수(예: 3×5 = 15); YAML에서 축 값을 늘리면 그리드 확장.
 """
 
 import bpy
@@ -28,7 +30,8 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
-from disease_materials import apply_disease_material
+from disease_materials import apply_preserved_variant
+from gltf_material_bake import simplify_materials_for_gltf_export
 
 # 설정은 (1) --job-json (권장: 래퍼가 YAML→JSON) 또는 (2) --config YAML — 후자는 Blender 내 PyYAML 필요.
 
@@ -38,7 +41,7 @@ def _parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     p = argparse.ArgumentParser()
     p.add_argument("--job-json", default=None, help="래퍼가 만든 해석된 설정 JSON (PyYAML 불필요)")
-    p.add_argument("--config", default="configs/variants_batch.yaml")
+    p.add_argument("--config", default="data/Tangerine_3D/configs/variants_batch.yaml")
     p.add_argument("--dry-run", action="store_true", help="내보내기 없이 목록만 출력")
     return p.parse_args(argv)
 
@@ -119,36 +122,57 @@ def _apply_transform(roots: list, size: float, squish: dict, height: float):
 
 # ─── 변종 목록 빌더 ───────────────────────────────────────────────────────────
 
-def _gen_values(spec: dict, rng: random.Random) -> list:
-    if spec.get('auto_generate', True):
-        lo, hi, n = spec['min'], spec['max'], spec['count']
+def _axis_values(spec: dict, rng: random.Random) -> list:
+    if spec.get("values"):
+        return list(spec["values"])
+    if spec.get("auto_generate", True):
+        lo, hi, n = spec["min"], spec["max"], spec["count"]
         return [round(rng.uniform(lo, hi), 4) for _ in range(n)]
-    return list(spec['values'])
+    return list(spec.get("values") or [])
+
 
 def build_jobs(cfg: dict) -> list:
-    rng         = random.Random(cfg.get('random_seed', 42))
-    size_vals   = _gen_values(cfg['size_variants'],   rng)
-    height_vals = _gen_values(cfg['height_variants'], rng)
-    squish_list = cfg['squish_variants']
-    diseases    = list(cfg['disease_params'].keys())
-    sources     = cfg['glb_sources']
+    rng = random.Random(cfg.get("random_seed", 42))
+    size_vals = _axis_values(cfg["size_variants"], rng)
+    height_vals = _axis_values(cfg["height_variants"], rng)
+    squish_list = cfg["squish_variants"]
+    color_list = cfg["color_variants"]
+    diseases = list(cfg["disease_params"].keys())
+    sources = cfg["glb_sources"]
+    name_style = (cfg.get("output_name_style") or "full").strip().lower()
 
     jobs = []
     for src in sources:
-        for dis in diseases:
-            for si, sv in enumerate(size_vals, 1):
-                for qi, sq in enumerate(squish_list, 1):
-                    for hi, hv in enumerate(height_vals, 1):
-                        fname = f"{src['name']}__{dis}__s{si}__q{qi}__h{hi}.glb"
-                        jobs.append({
-                            'base_name': src['name'],
-                            'glb_path':  src['path'],
-                            'disease':   dis,
-                            'size':      sv,
-                            'squish':    sq,   # dict: {label, scale_xy, scale_z}
-                            'height':    hv,
-                            'filename':  fname,
-                        })
+        for si, sv in enumerate(size_vals, 1):
+            for qi, sq in enumerate(squish_list, 1):
+                for hi, hv in enumerate(height_vals, 1):
+                    for ci, cv in enumerate(color_list, 1):
+                        for dis in diseases:
+                            if name_style == "short":
+                                fname = f"{src['name']}__{dis}.glb"
+                            else:
+                                fname = f"{src['name']}__{dis}__s{si}__q{qi}__h{hi}__c{ci}.glb"
+                            jobs.append(
+                                {
+                                    "base_name": src["name"],
+                                    "glb_path": src["path"],
+                                    "disease": dis,
+                                    "size": sv,
+                                    "squish": sq,
+                                    "height": hv,
+                                    "color_idx": ci,
+                                    "color_label": cv.get("label", f"c{ci}"),
+                                    "color_variant": cv,
+                                    "filename": fname,
+                                }
+                            )
+    if name_style == "short":
+        names = [j["filename"] for j in jobs]
+        if len(names) != len(set(names)):
+            raise ValueError(
+                "output_name_style=short 인데 파일명이 겹칩니다. "
+                "size/squish/height/color 축을 각각 1값만 쓰거나 output_name_style=full 로 바꾸세요."
+            )
     return jobs
 
 
@@ -223,9 +247,14 @@ def main():
             bpy.ops.object.shade_smooth()
             mobj.select_set(False)
 
-        # 병해 재질 적용 (모든 메시)
+        # 원본 healthy 재질 유지 → 틴트 → 병해 오버레이
         for mobj in mesh_objs:
-            apply_disease_material(mobj, job['disease'], cfg['disease_params'])
+            apply_preserved_variant(
+                mobj,
+                job["disease"],
+                cfg["disease_params"],
+                job["color_variant"],
+            )
 
         # 트랜스폼 적용 (루트 없으면 메시 직접 사용)
         _apply_transform(
@@ -233,17 +262,31 @@ def main():
             job['size'], job['squish'], job['height']
         )
 
+        # glTF 뷰어는 절차적 노드를 PBR로 못 넣어 알베도가 하얗게 떨어짐 → EMIT 베이크 후 단순 재질
+        bake_sz = int(cfg.get("gltf_bake_size", 1024))
+        simplify_materials_for_gltf_export(
+            mesh_objs,
+            job["disease"],
+            cfg["disease_params"],
+            bake_size=bake_sz,
+            image_basename=job["filename"].replace(".glb", ""),
+        )
+
         out_path = out_dir / job['filename']
         _export_glb(out_path, imported)
 
-        manifest.append({
-            'filename': job['filename'],
-            'base':     job['base_name'],
-            'disease':  job['disease'],
-            'size':     job['size'],
-            'squish':   job['squish']['label'],
-            'height':   job['height'],
-        })
+        manifest.append(
+            {
+                "filename": job["filename"],
+                "base": job["base_name"],
+                "disease": job["disease"],
+                "size": job["size"],
+                "squish": job["squish"]["label"],
+                "height": job["height"],
+                "color": job.get("color_label", ""),
+                "color_idx": job.get("color_idx"),
+            }
+        )
 
     manifest_path = out_dir / 'manifest.json'
     with open(manifest_path, 'w', encoding='utf-8') as f:

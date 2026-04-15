@@ -18,7 +18,7 @@ All tunable parameters live in [`config.py`](config.py) as dataclasses. Override
 | Key | Type | Description |
 |-----|------|-------------|
 | `blender_executable` | str | Path to `blender` binary; empty = `PATH`. |
-| `assets_root` | str | Asset root (meshes/textures); extend for production. |
+| `assets_root` | str | Asset root (meshes/textures); default `data/Tangerine_3D`. |
 | `citrus_count_min` / `citrus_count_max` | int | Random count of citrus spheres per episode. |
 | `spawn_total` | int? | If set, fixed number of fruits (overrides min/max). |
 | `spawn_rate_per_sec` | float | Reserved for streaming spawn. |
@@ -53,16 +53,38 @@ All tunable parameters live in [`config.py`](config.py) as dataclasses. Override
 | `jpeg_quality_min/max` | int | JPEG quality if `jpeg` in `augment_order`. |
 | `augment_order` | list[str] | Order of ops: `motion_blur`, `gaussian_noise`, `jpeg`. |
 
+## `preprocess`
+
+Phase 1: trigger mode and belt slot tagging (merged into `infer` unless `mode` is `passthrough`).  
+Implementation package: `src/inference/preprocess/` (YAML key stays `preprocess`).
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `mode` | str | `simulation` (frame-sync ticks), `encoder_stub` (counter stub), `passthrough` (no `belt_slot_index`). |
+| `mm_per_tick` | float | Logical distance per tick (metadata; e.g. mm). |
+| `slots_count` | int | Horizontal bins for `belt_slot_index` from bbox center x. |
+| `tick_stride_frames` | int | Ticks advanced per frame index in simulation trigger. |
+| `attach_slots_during_inference` | bool | If false, skip slot assignment even if not passthrough. |
+| `multi_camera_offsets` | list[int] | Slot offsets per camera (first index used for single camera). |
+| `write_slot_events_jsonl` | bool | If true, write `slot_events_jsonl` alongside inference. |
+| `slot_events_jsonl` | str | Filename under experiment dir for slot tick log. |
+
 ## `inference`
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `detector_weights` | str | Ultralytics detection `.pt`. |
+| `detection_backend` | str | `yolo_two_stage` (default), `yolo_unified`, `mask_rcnn_torchvision`. |
+| `classifier_backend` | str | `yolo_cls`, `mobilenet_v3`, `none` (two-stage / mask-rcnn crop path). |
+| `tracker_profile` | str | Empty = use `tracker` as-is. `botsort` / `bytetrack` map to built-in Ultralytics yaml. |
+| `mobilenet_weights` | str | Optional `.pth` for MobileNetV3 head (see `classifiers.py`). |
+| `mask_rcnn_weights` | str | Optional custom Mask R-CNN weights; empty = COCO pretrained. |
+| `mask_rcnn_classify_crops` | bool | If false, Mask R-CNN path skips crop disease classifier (uniform probs). |
+| `detector_weights` | str | Ultralytics detection `.pt` (YOLO backends). |
 | `classifier_weights` | str | Ultralytics classification `.pt` for **full softmax**; empty → uniform fallback. |
 | `device` | str | `cuda`, `cpu`, or empty for auto. |
 | `cuda_visible_devices` | str | Sets `CUDA_VISIBLE_DEVICES` before import. |
-| `conf_threshold` / `iou_threshold` | float | Detection thresholds. |
-| `tracker` | str | e.g. `bytetrack.yaml`. |
+| `conf_threshold` / `iou_threshold` | float | Detection thresholds (also IoU for internal IoU tracker in Mask R-CNN path). |
+| `tracker` | str | e.g. `bytetrack.yaml` (used when `tracker_profile` is empty). |
 | `cls_input_size` | int | Square crop resize for classifier. |
 | `batch_size_inference` | int | Batch size for crop classification. |
 | `alert_probability_threshold` | float | Red box if top disease prob ≥ this. |
@@ -88,5 +110,6 @@ All tunable parameters live in [`config.py`](config.py) as dataclasses. Override
   {renders_subdir}/            # raw PNGs + frame_metadata.jsonl
   {renders_aug}/               # augmented PNGs
   {inference.predictions_jsonl}
+  {postprocess.actuation_signals_jsonl}   # optional; after `--stage postprocess`
   {report.reports_subdir}/       # report.md, report.html, crops/, figures/
 ```

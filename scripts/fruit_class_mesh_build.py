@@ -3,7 +3,7 @@
 data/Fruits/ 클래스 폴더별 GLB 배치 (기본 총 15개 = 5클래스 × 3).
 
 - 베이스 메시: data/fresh_tangerine.glb, mandarin.glb, tangerine.glb
-- 재질: 폴더 내 이미지 + 질병별 정점 색 (docs/DISEASE_SYNTH_REFERENCE.md)
+- 재질: 폴더 내 이미지 + 질병별 정점 색 (docs/DISEASE_MATERIALS.md)
 
   python scripts/fruit_class_mesh_build.py --config configs/default_config.yaml
 """
@@ -97,7 +97,7 @@ def main() -> int:
     job_path.parent.mkdir(parents=True, exist_ok=True)
     write_json(job_path, job)
 
-    entry = ROOT / "src" / "blender_sim" / "fruit_class_mesh_entry.py"
+    entry = ROOT / "src" / "blender_sim" / "entries" / "fruit_class_mesh_entry.py"
     cmd = [blender_exe, "--background", "--python", str(entry), "--", str(job_path)]
     print("Blender:", " ".join(cmd))
     subprocess.run(cmd, check=True)

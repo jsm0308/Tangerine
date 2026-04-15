@@ -31,7 +31,7 @@
 |------|------|
 | **명령** | `python main.py --stage blender --config configs/default_config.yaml` |
 | **입력** | 위 설정, Blender 설치(`blender_executable` 또는 PATH) |
-| **처리** | ① `dump_blender_job()` → `outputs/{id}/blender_config.json` 저장 ② `blender --background --python src/blender_sim/blender_entry.py -- blender_config.json` ③ `simulation.py` 가 씬 구성(벨트·측벽·UV 구체 귤·카메라·라이트)·물리 시뮬·프레임별 렌더 |
+| **처리** | ① `dump_blender_job()` → `outputs/{id}/blender_config.json` 저장 ② `blender --background --python src/blender_sim/entries/blender_entry.py -- blender_config.json` ③ `simulation.py` 가 씬 구성(벨트·측벽·UV 구체 귤·카메라·라이트)·물리 시뮬·프레임별 렌더 |
 | **출력 (폴더)** | `outputs/{id}/renders/` — `frame_0001.png` … |
 | **출력 (메타)** | `outputs/{id}/frame_metadata.jsonl` — 프레임·객체·`gt_disease_class`·`bbox_xyxy` 등 (한 줄 = 한 객체·한 프레임) |
 | **비고** | 렌더 시 모션 블러는 끔 → 블러는 **2단계 augment**에서 줌. 귤 재질은 현재 클래스별 색(디버그); `texture_pools` 는 향후 텍스처 연결용 필드. |
@@ -46,7 +46,7 @@
 |------|------|
 | **명령** | `python main.py --stage augment --config configs/default_config.yaml` |
 | **입력** | `outputs/{id}/renders/*.png` (기본 `augment.input_subdir` = `renders`) |
-| **처리** | `src/augment_2d/pipeline.py` — `augment_order` 순서(기본: 모션 블러 → 가우시안 노이즈 → JPEG) |
+| **처리** | `src/augment/pipeline.py` — `augment_order` 순서(기본: 모션 블러 → 가우시안 노이즈 → JPEG) |
 | **출력** | `outputs/{id}/renders_aug/` — 파일명 동일, PNG 덮어쓰기 형태로 증강본 저장 (기본 `augment.output_subdir` = `renders_aug`) |
 
 ---
@@ -106,11 +106,12 @@
 
 | 순서 | 이름 | 진입 | 나오는 것 | 비고 |
 |------|------|------|-----------|------|
-| A | 롤러 컨베이어 데모 | `python scripts/run_conveyor_demo.py` | 기본 `conveyor_run.mp4` (중간 PNG는 삭제) | [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md) — 물리·GLB 캐시·Seraph 실행; `conveyor_demo/defaults.py` |
+| A0 | 컨베이어 벨트 GLB (정적) | `python Conveyor_Lab/scripts/export_conveyor_glb.py` | `.glb` + 설정 JSON | [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) §3 |
+| A | 롤러 컨베이어 데모 (MP4) | `python Conveyor_Lab/scripts/run_conveyor_demo.py` | `conveyor_run.mp4` 등 | 전부 [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) |
 | B | Healthy GLB 81종 빌드 | `python scripts/healthy_variants_build.py` | `outputs/.../healthy_variants_glb/*.glb` | **에셋 생성**; 학습용 프레임 메타와 직접 연결되지 않음 |
-| B1 | 베이스 GLB 3종 | `python scripts/build_base_mesh.py` (`configs/base_mesh.yaml`) | `assets/glb/*.glb` | 아이코스피어 + **Smart UV**; 변종 전에 필수 |
-| B1a | 병해 알베도 PNG | `python scripts/gen_disease_texture_masks.py` | `assets/textures/disease/*_albedo.png` | B2 전에 한 번 (또는 색 바꿀 때) |
-| B2 | 병해 재질 변종 (UV+이미지) | `python scripts/generate_variants_build.py` (`configs/variants_batch.yaml`) | `outputs/_variant_glb/*.glb` + `manifest.json` | B1·B1a 이후; 3×병해 5×형태 그리드(405) |
+| B1 | 베이스 GLB 3종 | 작업자 에셋 `tangerine0/1/2.glb` → `data/Tangerine_3D/glb/` (선택: `build_base_mesh.py` 로 아이코스피어) | `data/Tangerine_3D/glb/tangerine{0,1,2}.glb` | 변종 전에 필수 |
+| B1a | 병해 알베도 PNG (선택) | `python scripts/gen_disease_texture_masks.py` | `data/Tangerine_3D/textures/disease/*_albedo.png` | B2와 무관; 참고·2D 합성용 |
+| B2 | healthy 틴트 + 병해 오버레이 → EMIT 베이크 → glTF | `python scripts/generate_variants_build.py` (`data/Tangerine_3D/configs/variants_batch.yaml`) | `outputs/_variant_glb/*.glb` + `manifest.json` | B1 이후; [DISEASE_MATERIALS.md](DISEASE_MATERIALS.md) (클래스별 스펙); 기본 **15**개(베이스 3×병해 5; YAML에서 형태·색 그리드 확장 가능) |
 | C | 원천 이미지 전처리 | `scripts/remove_bg_crop_fruits.py`, `balance_fruits_by_class.py` 등 | `data/` 쪽 폴더 | **학습 데이터 준비**용; 파이프라인 필수 단계 아님 |
 
 **학습·리포트 GT 정본**은 **`simulation.py` 줄기(1단계)** 로 두는 것을 권장합니다.
@@ -139,7 +140,7 @@
 요약:
 
 - 도메인 적응, Diffusion 인페인팅, 2단계 세그, 지식 증류·LoRA, ONNX/TensorRT 등  
-- **롤러·벨트에 디테일한 물리 법칙 적용** (마찰·굴림·구동 토크·접촉 모델 등) — 현재는 Blender 리지드 바디 + 키프레임 수준; `conveyor_demo/` 의 롤러 회전·마찰 계수 등을 확장할 때 검토
+- **롤러·벨트에 디테일한 물리 법칙 적용** (마찰·굴림·구동 토크·접촉 모델 등) — 현재는 Blender 리지드 바디 + 키프레임 수준; `blender_sim/conveyor/` 의 롤러 회전·마찰 계수 등을 확장할 때 검토
 
 ---
 

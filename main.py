@@ -7,9 +7,11 @@ See README.md and docs/PIPELINE.md for repository layout and full data flow.
 Stages:
   blender   — Headless Blender sim + renders + frame_metadata.jsonl (requires `blender` on PATH or config.blender_executable).
   augment   — 2D augmentation on rendered PNGs.
-  infer     — YOLO detect/track + optional classifier (full softmax per crop); writes predictions.jsonl.
+  infer     — Modular vision (YOLO / Mask R-CNN) + track + disease probs; writes predictions.jsonl.
+  postprocess — Route predictions to logical actuation signals (JSONL/print/noop).
   report    — Crops, CSV, Markdown/HTML under outputs/{Exp_ID}/reports/.
   all       — augment → infer → report (run `--stage blender` first if renders are missing).
+  vision_all — augment → infer → postprocess (no HTML report).
 
 Examples:
   python main.py --stage blender --config configs/default_config.yaml
@@ -47,7 +49,7 @@ def _run_blender(cfg) -> None:
         raise RuntimeError(
             "Blender executable not found. Set blender.blender_executable in config or install Blender and add to PATH."
         )
-    entry = ROOT / "src" / "blender_sim" / "blender_entry.py"
+    entry = ROOT / "src" / "blender_sim" / "entries" / "blender_entry.py"
     cmd = [exe, "--background", "--python", str(entry), "--", str(json_path)]
     logging.getLogger(__name__).info("Running: %s", " ".join(cmd))
     subprocess.run(cmd, check=True)
@@ -57,7 +59,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Smart factory synthetic pipeline")
     parser.add_argument(
         "--stage",
-        choices=("blender", "augment", "infer", "report", "all"),
+        choices=("blender", "augment", "infer", "postprocess", "report", "all", "vision_all"),
         required=True,
         help="Pipeline stage to run",
     )
@@ -71,20 +73,27 @@ def main() -> None:
         _run_blender(cfg)
         return
 
-    from src.augment_2d.pipeline import run_augmentation  # noqa: WPS433
+    from src.augment.pipeline import run_augmentation  # noqa: WPS433
     from src.inference.pipeline import run_inference  # noqa: WPS433
+    from src.postprocess.logical_queue import run_postprocess  # noqa: WPS433
     from src.reporting.generate import run_report  # noqa: WPS433
 
     if args.stage == "augment":
         run_augmentation(cfg)
     elif args.stage == "infer":
         run_inference(cfg)
+    elif args.stage == "postprocess":
+        run_postprocess(cfg)
     elif args.stage == "report":
         run_report(cfg)
     elif args.stage == "all":
         run_augmentation(cfg)
         run_inference(cfg)
         run_report(cfg)
+    elif args.stage == "vision_all":
+        run_augmentation(cfg)
+        run_inference(cfg)
+        run_postprocess(cfg)
 
 
 if __name__ == "__main__":

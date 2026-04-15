@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Blender 헤드리스로 configs/variants_batch.yaml 기준 변종 GLB 배치.
+Blender 헤드리스로 data/Tangerine_3D/configs/variants_batch.yaml 기준 변종 GLB 배치.
 
   python scripts/generate_variants_build.py --dry-run
   python scripts/generate_variants_build.py
-  python scripts/generate_variants_build.py --config configs/variants_batch.yaml
+  python scripts/generate_variants_build.py --config data/Tangerine_3D/configs/variants_batch.yaml
 
 산출물: outputs/_variant_glb/*.glb (기본 output_dir; YAML에서 변경 가능), manifest.json
 """
@@ -40,7 +40,11 @@ def _blender_exe(cfg) -> str:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="generate_variants (Blender batch)")
-    p.add_argument("--config", default="configs/variants_batch.yaml", help="변종 YAML")
+    p.add_argument(
+        "--config",
+        default="data/Tangerine_3D/configs/variants_batch.yaml",
+        help="변종 YAML",
+    )
     p.add_argument(
         "--pipeline-config",
         default="configs/default_config.yaml",
@@ -95,6 +99,7 @@ def main() -> int:
     cmd = [
         exe,
         "--background",
+        "--factory-startup",
         "--python",
         str(entry),
         "--",

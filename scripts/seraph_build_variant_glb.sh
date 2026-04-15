@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Seraph(Aurora)에서 실행: 병해 알베도 PNG → 베이스 GLB → 변종 GLB(405) 전체 빌드.
+# Seraph(Aurora)에서 실행: 베이스 GLB → 변종 GLB(기본 15; variants_batch.yaml 기준) 빌드.
 #
 #   chmod +x scripts/seraph_build_variant_glb.sh
 #   ./scripts/seraph_build_variant_glb.sh

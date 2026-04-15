@@ -9,7 +9,7 @@ experiment:
 blender:
   # Windows 기본 설치 (5.x). 다른 위치면 수정하세요.
   blender_executable: "C:/Program Files/Blender Foundation/Blender 5.1/blender.exe"
-  assets_root: "assets"
+  assets_root: "data/Tangerine_3D"
   citrus_count_min: 2
   citrus_count_max: 4
   belt_speed: 1.2
@@ -31,7 +31,19 @@ augment:
     - gaussian_noise
     - jpeg
 
+# Phase 1: belt slot tagging (simulation / encoder stub). passthrough = no belt_slot_index.
+preprocess:
+  mode: "simulation"
+  mm_per_tick: 5.0
+  slots_count: 8
+  tick_stride_frames: 1
+  attach_slots_during_inference: true
+  write_slot_events_jsonl: false
+
 inference:
+  detection_backend: "yolo_two_stage"
+  classifier_backend: "yolo_cls"
+  tracker_profile: ""
   detector_weights: "yolov8n.pt"
   classifier_weights: ""
   conf_threshold: 0.25
@@ -41,6 +53,18 @@ inference:
     - Canker
     - Scab
     - Black_spot
+
+# Phase 3: logical routing + driver (vision decoupled from hardware).
+postprocess:
+  driver: "jsonl"
+  actuation_signals_jsonl: "actuation_signals.jsonl"
+  emit_on_route_change_only: true
+  routing_rules:
+    Normal: "line_accept"
+    Canker: "line_reject"
+    Scab: "line_reject"
+    Black_spot: "line_reject"
+    default: "line_accept"
 
 report:
   include_html: true

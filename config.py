@@ -32,7 +32,7 @@ import json
 import os
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 try:
     import yaml  # type: ignore
@@ -70,8 +70,8 @@ class BlenderConfig:
 
     # Blender 실행 파일 전체 경로. 비우면 시스템 PATH 의 `blender` / `blender.exe` 사용.
     blender_executable: str = ""
-    # 메시·이미지 텍스처 등 에셋 루트 (프로젝트 내 `assets/` 등)
-    assets_root: str = "assets"
+    # 메시·이미지 텍스처 등 에셋 루트 (기본 `data/Tangerine_3D`)
+    assets_root: str = "data/Tangerine_3D"
     # 한 에피소드에서 생성할 귤 개수: 최소값 (무작위 범위의 하한)
     citrus_count_min: int = 2
     # 한 에피소드에서 생성할 귤 개수: 최대값 (무작위 범위의 상한)
@@ -126,6 +126,32 @@ class BlenderConfig:
     renders_subdir: str = "renders"
     # 프레임·객체·GT 질병·(선택) 2D bbox 등 한 줄당 JSON — `src/blender_sim/metadata_schema.json` 참고
     metadata_filename: str = "frame_metadata.jsonl"
+
+
+@dataclass
+class PreprocessConfig:
+    """
+    Phase 1: 트리거·벨트 슬롯 인덱스 (시뮬/스텁; 추후 PLC·인코더는 동일 인터페이스로 교체).
+
+    다중 카메라 오프셋은 `multi_camera_offsets` 에 픽셀 또는 슬롯 단위 보정값을 쌓아두고,
+    `BeltSlotModel` 에서 합성하는 위치로 확장하면 됩니다.
+    """
+
+    # simulation: 프레임 동기 틱 + 이미지 x 기준 슬롯 / encoder_stub: 카운터만 증가 / passthrough: 슬롯 태깅 안 함
+    mode: str = "simulation"
+    # 논리적 이동 거리(예: mm) — 로그·메타용; 시뮬에선 슬롯 인덱스와 별개로 기록 가능
+    mm_per_tick: float = 5.0
+    # 이미지 가로를 균등 분할할 칸 수 (롤러 칸 인덱스)
+    slots_count: int = 8
+    # 시뮬에서 프레임마다 몇 틱 진행할지 (벨트 속도와의 스케일)
+    tick_stride_frames: int = 1
+    # 추론 단계에서 bbox 로 belt_slot_index 를 붙일지 (preprocess.mode 가 passthrough 이면 무시)
+    attach_slots_during_inference: bool = True
+    # 카메라별 슬롯 오프셋(정수, 슬롯 단위). 예: [0, 4] 는 추후 멀티 카메라 정렬용 예약
+    multi_camera_offsets: List[int] = field(default_factory=list)
+    # 선택: 슬롯 이벤트만 별도 파일로 남김
+    write_slot_events_jsonl: bool = False
+    slot_events_jsonl: str = "slot_events.jsonl"
 
 
 @dataclass
@@ -203,6 +229,40 @@ class InferenceConfig:
     inference_input_subdir: str = "renders_aug"
     # 프레임별 검출·추적·질병 확률을 한 줄씩 JSON 으로 저장하는 파일명
     predictions_jsonl: str = "predictions.jsonl"
+    # --- 모듈형 백엔드 (미설정 시 기존 동작: two_stage + tracker 문자열 그대로)
+    # yolo_unified | yolo_two_stage | mask_rcnn_torchvision
+    detection_backend: str = "yolo_two_stage"
+    # yolo_cls | mobilenet_v3 | none (unified/two_stage 에서 분류 경로 선택)
+    classifier_backend: str = "yolo_cls"
+    # 비어 있으면 `tracker` 키를 그대로 사용. botsort | bytetrack 이면 내장 yaml 로 매핑
+    tracker_profile: str = ""
+    # torchvision MobileNet 분류 헤드용 체크포인트(.pth 전체 state_dict 또는 호환 가중치)
+    mobilenet_weights: str = ""
+    # torchvision Mask R-CNN 백본 가중치: 비우면 COCO 사전학습 자동 다운로드
+    mask_rcnn_weights: str = ""
+    # Mask R-CNN 후 크롭 질병 분류를 끄려면 none (박스만)
+    mask_rcnn_classify_crops: bool = True
+
+
+@dataclass
+class PostprocessConfig:
+    """Phase 3: 논리 큐·배출 라우팅·드라이버 (비전과 하드웨어 분리)."""
+
+    # top_disease 문자열 -> 라우트 id (예: Air 라인 / 리젝). "default" 키는 폴백
+    routing_rules: Dict[str, str] = field(
+        default_factory=lambda: {
+            "Normal": "line_accept",
+            "Canker": "line_reject",
+            "Scab": "line_reject",
+            "Black_spot": "line_reject",
+            "default": "line_accept",
+        }
+    )
+    # jsonl | print | noop
+    driver: str = "jsonl"
+    actuation_signals_jsonl: str = "actuation_signals.jsonl"
+    # 동일 트랙에 대해 매 프레임 신호를 낼지, 라우트 변경 시에만 낼지
+    emit_on_route_change_only: bool = True
 
 
 @dataclass
@@ -226,7 +286,9 @@ class PipelineConfig:
     experiment: ExperimentConfig = field(default_factory=ExperimentConfig)
     blender: BlenderConfig = field(default_factory=BlenderConfig)
     augment: Augment2DConfig = field(default_factory=Augment2DConfig)
+    preprocess: PreprocessConfig = field(default_factory=PreprocessConfig)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
+    postprocess: PostprocessConfig = field(default_factory=PostprocessConfig)
     report: ReportConfig = field(default_factory=ReportConfig)
 
     @classmethod
@@ -244,9 +306,19 @@ class PipelineConfig:
         exp = _merge(ExperimentConfig, data.get("experiment", {}))
         blend = _merge(BlenderConfig, data.get("blender", {}))
         aug = _merge(Augment2DConfig, data.get("augment", {}))
+        pre = _merge(PreprocessConfig, data.get("preprocess", {}))
         inf = _merge(InferenceConfig, data.get("inference", {}))
+        post = _merge(PostprocessConfig, data.get("postprocess", {}))
         rep = _merge(ReportConfig, data.get("report", {}))
-        return cls(experiment=exp, blender=blend, augment=aug, inference=inf, report=rep)
+        return cls(
+            experiment=exp,
+            blender=blend,
+            augment=aug,
+            preprocess=pre,
+            inference=inf,
+            postprocess=post,
+            report=rep,
+        )
 
     def to_dict(self) -> dict:
         """직렬화·로그 저장용."""
@@ -254,7 +326,9 @@ class PipelineConfig:
             "experiment": asdict(self.experiment),
             "blender": asdict(self.blender),
             "augment": asdict(self.augment),
+            "preprocess": asdict(self.preprocess),
             "inference": asdict(self.inference),
+            "postprocess": asdict(self.postprocess),
             "report": asdict(self.report),
         }
 

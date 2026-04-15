@@ -137,7 +137,7 @@ def main() -> int:
     job_path.parent.mkdir(parents=True, exist_ok=True)
     write_json(job_path, job)
 
-    entry = ROOT / "src" / "blender_sim" / "healthy_variants_entry.py"
+    entry = ROOT / "src" / "blender_sim" / "entries" / "healthy_variants_entry.py"
     cmd = [blender_exe, "--background", "--python", str(entry), "--", str(job_path)]
     print("Blender:", " ".join(cmd))
     subprocess.run(cmd, check=True)

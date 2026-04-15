@@ -1,0 +1,12 @@
+# Colab / 로컬: pip install -r requirements-notebook.txt
+# PyTorch는 CUDA 버전에 맞게 https://pytorch.org/ 에서 설치해도 됨.
+
+torch>=2.1.0
+torchvision>=0.16.0
+tensorboard>=2.14.0
+tqdm>=4.65.0
+matplotlib>=3.7.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+opencv-python>=4.8.0
+Pillow>=10.0.0

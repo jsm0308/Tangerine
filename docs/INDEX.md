@@ -2,13 +2,13 @@
 
 | 문서 | 용도 |
 |------|------|
+| [REPOSITORY.md](REPOSITORY.md) | **핵심 폴더·파일** 요약 (어디를 보면 되는지) |
 | [PIPELINE.md](PIPELINE.md) | 메인 실험 0~4단계, `main.py` 흐름, 부가 경로(B·컨베이어) 한눈 표 |
-| [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md) | 롤러 컨베이어 물리·GLB 캐시·Seraph에서 실행 |
-| [SERAPH_AND_LOCAL.md](SERAPH_AND_LOCAL.md) | 로컬 vs Seraph에 무엇을 두는지, Git/산출물 |
-| [SERAPH_SYNC.md](SERAPH_SYNC.md) | **코드 올리기/내리기(git push·pull)·실행** |
-| [SERAPH_REMOTE_GUIDE.md](SERAPH_REMOTE_GUIDE.md) | SSH·Conda·Blender·**변종 GLB Seraph 빌드** (§6) |
-| [DISEASE_SYNTH_REFERENCE.md](DISEASE_SYNTH_REFERENCE.md) | 병해 합성 참고 |
-| [DISEASE_VISUAL_SPEC.md](DISEASE_VISUAL_SPEC.md) | 병해 시각 스펙 |
+| [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) | 컨베이어 실험·실행(스크립트·산출은 `Conveyor_Lab/`); [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md)는 이쪽으로 안내 |
+| [SERAPH.md](SERAPH.md) | **Seraph 한 문서:** 로컬 vs 서버, Git 동기화, SSH·Conda·Blender, 실행, 변종 GLB 빌드 |
+| [DISEASE_MATERIALS.md](DISEASE_MATERIALS.md) | 병해 클래스별 절차 재질 스펙·조절 키·품질 팁 |
 | [future_extensions.txt](future_extensions.txt) | 향후 확장 메모 |
 
 루트 [README.md](../README.md) — 레포 개요·빠른 실행·컨베이어 한 줄 요약.
+
+**`src/` 요약:** `blender_sim/`(bpy·`entries/` 진입·`conveyor/` 데모), `augment/`(2D 증강), `inference/`(`backends`·`preprocess`/벨트 슬롯), `postprocess/`, `reporting/`.

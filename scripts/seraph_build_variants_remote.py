@@ -10,7 +10,7 @@
   SERAPH_REPO_ROOT     Seraph 상 레포 절대 경로 (기본: /data/minjae051213/Tangerine)
 
 선행: ~/.ssh/config 에 Host 가 설정되어 있고, Seraph 에 레포·conda env tangerine·Blender 가 준비되어 있어야 한다.
-      docs/SERAPH_REMOTE_GUIDE.md 참고.
+      docs/SERAPH.md 참고.
 """
 
 from __future__ import annotations
