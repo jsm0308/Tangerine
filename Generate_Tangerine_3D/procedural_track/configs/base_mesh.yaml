@@ -1,0 +1,27 @@
+# =============================================================================
+# 베이스 GLB 전용 — 과일 몸체 하나만 (꼭지·다중 오브젝트 없음)
+# =============================================================================
+# 빌드:  python scripts/build_base_mesh.py
+# 산출:  output_dir 아래 {asset_name}.glb
+# 작업자 제작 tangerine0/1/2.glb 는 mesh_bases/ 에 두고 variants_batch.yaml 이 참조한다.
+# =============================================================================
+
+output_dir: Generate_Tangerine_3D/procedural_track/mesh_bases
+
+defaults:
+  primitive: icosphere
+  radius: 1.0
+
+material:
+  base_color: [0.9, 0.42, 0.12, 1.0]
+  roughness: 0.55
+  specular_ior_level: 0.35
+
+exports:
+  - asset_name: tangerine0
+  - asset_name: tangerine1
+    radius: 0.97
+    scale: [1.03, 1.0, 0.98]
+  - asset_name: tangerine2
+    radius: 1.03
+    subdivisions: 4

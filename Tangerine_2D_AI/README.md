@@ -2,13 +2,12 @@
 
 5개 클래스(`Black spot`, `Canker`, `Greening`, `healthy`, `Scab`) 감귤 2D 이미지를 **전이학습 CNN**으로 분류하고, **TensorBoard**로 학습 과정을 기록하며, **Grad-CAM**으로 모델이 주목한 영역을 시각화합니다.
 
-## Colab에서 사용하는 방법 (zip 두 개)
+## Colab에서 사용하는 방법
 
-1. **데이터** `Tangerine_2D` 폴더를 zip으로 압축해 Colab에 업로드·압축 해제합니다.  
-   - 예: `/content/Tangerine_2D` 아래에 클래스 폴더 5개가 바로 보여야 합니다.
-2. **코드** 이 폴더(`Tangerine_2D_AI`)를 zip으로 압축해 업로드·압축 해제합니다.  
-   - 예: `/content/Tangerine_2D_AI`
-3. 노트북 `train_tangerine_2d.ipynb`를 열고, **경로 셀**에서 `DATA_ROOT` / `PROJECT_ROOT`를 자신의 경로에 맞게 수정한 뒤 전체 실행합니다.
+1. **노트북만 먼저 연다** — Colab **파일 → 노트북 업로드**로 `train_tangerine_2d.ipynb`만 올려도 된다 (코드 zip을 먼저 풀 필요 없음).
+2. 왼쪽 **파일** 패널에 `Tangerine_2D.zip`, `Tangerine_2D_AI.zip` 을 업로드한다 (또는 Drive에 두고 마운트).
+3. **런타임 → 모두 실행** 또는 위에서부터 셀 순서대로 실행. 첫 코드 셀(§1)이 zip이 있으면 `/content`에 풀고, **`Tangerine_2D_AI/config.py`·데이터 폴더 위치를 자동 탐지**한다 (`colab_paths.py`). zip 안에 `Tangerine_2D_AI/Tangerine_2D_AI/` 처럼 이름이 한 겹 더 있어도 수동으로 옮길 필요 없다.
+4. 학습·테스트 분리: 기본 **`run_training(cfg, run_final_eval=False)`** 후 **`run_test_only(cfg)`**. 한 번에 끝내려면 `run_final_eval=True` (비권장).
 
 ```text
 /content/Tangerine_2D/
@@ -25,17 +24,40 @@
   train_tangerine_2d.ipynb
 ```
 
+## 모델 아키텍처 (한눈에)
+
+- **무엇을 하나요?** 이미지 한 장을 넣으면 **클래스 번호 하나**를 내는 **분류 네트워크**입니다. (합성·실사 감귤 이미지 → 5개 병해/정상 중 하나)
+
+- **기본 모델 (`backbone="resnet18"`)**  
+  - **ResNet-18**: 앞부분은 합성곱으로 특징을 뽑고, 끝에서 **전역 평균 풀링 → 완전연결층(fc)** 으로 점수를 냅니다.  
+  - **ImageNet**으로 미리 학습된 가중치를 가져온 뒤, **마지막 `fc`만** 우리 클래스 개수(예: 5)에 맞게 **한 겹 선형층**으로 바꿉니다. 나머지 층은 그대로 두고 같이 학습합니다(전이학습).
+
+- **입력**  
+  - RGB 이미지, 보통 **224×224**로 맞춘 뒤 모델에 넣습니다.
+
+- **다른 백본 (`TrainConfig.backbone`)**  
+  - `resnet50`: 더 깊은 ResNet, 마찬가지로 마지막 `fc`만 클래스 수에 맞게 교체.  
+  - `efficientnet_b0`: 효율적인 CNN, 마지막 분류기 부분만 **Dropout + 선형층**으로 교체.
+
+- **Grad-CAM**  
+  - ResNet은 마지막 합성곱 블록 **`layer4`**, EfficientNet은 **`features`의 마지막 블록**을 써서 “어디를 보며 판단했는지” 히트맵을 만듭니다.
+
+구현 위치: [`model_factory.py`](model_factory.py) 의 `build_model`.
+
 ## 산출물
 
 기본 출력 디렉터리는 `output_dir/experiment_name`(설정: `TrainConfig.output_dir`, `experiment_name`)입니다.
 
 | 항목 | 설명 |
 |------|------|
-| `tensorboard/` | 학습·검증 loss/accuracy, learning rate |
-| `best.pt`, `last.pt` | 체크포인트 (테스트·Grad-CAM은 **best** 가중치 사용) |
+| `training_summary.json` | 학습 종료 시 저장(베스트 에폭·val acc/F1·시드·데이터 경로). `run_final_eval=False`여도 §4 끝에 생성 |
+| `tensorboard/` | 학습·검증 loss/accuracy, **F1 macro·weighted·micro**, learning rate |
+| `best.pt`, `last.pt` | 체크포인트 (`best_val_acc`, `best_val_f1_macro` 포함). `TrainConfig.best_metric`으로 best 선택 (`val_accuracy` 또는 `val_f1_macro`) |
 | `class_to_idx.json`, `splits.json` | 클래스 매핑·분할에 사용한 경로(재현용) |
-| `test_classification_report.txt`, `test_confusion_matrix.png` | 테스트셋 분류 리포트·혼동 행렬 |
-| `gradcam/` | Grad-CAM 오버레이 PNG (파일명에 gt/pred 클래스 포함) |
+| `test_metrics.json`, `test_predictions.csv` | 테스트 F1·혼동 행렬(JSON)·샘플별 예측(CSV). `run_test_only` 또는 `run_training(..., run_final_eval=True)` 시 |
+| `test_classification_report.txt`, `test_confusion_matrix.png` | 테스트셋 리포트(상단에 F1 요약)·혼동 행렬 |
+| `gradcam/` | Grad-CAM 오버레이 PNG (파일명에 gt/pred 클래스 포함). **§4만 실행 시 없음** — `run_test_only` 필요 |
+| (선택) `*_bundle.zip` | `experiment.zip_run_directory(effective_output_dir)` 로 실험 폴더 통째 압축 |
 
 Colab에서 TensorBoard:
 
@@ -45,6 +67,11 @@ Colab에서 TensorBoard:
 ```
 
 (`output_dir`를 바꿨다면 그 경로의 `tensorboard` 하위 폴더로 지정)
+
+### Colab에서 결과가 “날아간” 경우
+
+- `/content`는 **런타임 종료 시 지워질 수 있음**. 중요한 산출물은 **`output_dir`를 Google Drive에 두거나**, 주기적으로 **`best.pt`** 등을 Drive로 복사해 두는 것을 권장합니다.
+- **학습은 끝났는데** 마지막 테스트 리포트 단계에서만 오류가 났다면, 같은 `cfg`로 데이터·시드를 맞춘 뒤 **`run_test_only(cfg)`** 만 다시 실행할 수 있습니다 (`experiment`에서 import). `best.pt` 경로를 넘기려면 `run_test_only(cfg, Path("/path/to/best.pt"))`.
 
 ---
 
@@ -69,8 +96,9 @@ Colab에서 TensorBoard:
 
 ### 4. 모델: 사전학습 CNN (기본 `resnet18`)
 
-- ResNet은 구조가 단순하고 Grad-CAM 타깃 레이어(`layer4`)가 명확합니다.
-- 필요 시 `TrainConfig.backbone`을 `resnet50`, `efficientnet_b0`로 바꿀 수 있습니다(이미지 크기 224 가정).
+- 구조 요약은 위 **[모델 아키텍처 (한눈에)](#모델-아키텍처-한눈에)** 절을 본다.
+- ResNet은 Grad-CAM 타깃(`layer4`)이 명확하고, 기본 실험에 무난합니다.
+- `TrainConfig.backbone`으로 `resnet50`, `efficientnet_b0` 선택 가능(입력 224 가정).
 
 ### 5. 옵티마이저·스케줄
 

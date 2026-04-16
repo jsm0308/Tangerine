@@ -1,0 +1,70 @@
+# 건강 귤만 — 3^5 = 243개
+#   메시 3 × 전체 크기 3 × 색 3 × 높이(Z) 3 × 형태(울퉁불퉁 근사) 3
+#
+# 높이(height_variants): 루트 Z 방향만 추가 배율. 범위 0.95~1.05 (아주 살짝).
+#
+# 울퉁불퉁(squish_variants): 정점 노이즈가 아니라 **축 스케일**로만 XY 대비 Z 비율을 살짝 다르게(타원체에 가깝게).
+#   각 변형마다 XY 곱과 Z 곱의 비율이 최대 약 ±1.2% 수준으로만 벌어짐(시각적 “살짝 밋밋/길쭉”).
+#
+# 기존 병해·다른 폴더 GLB 는 지우지 않음 → 반드시 --no-clean
+#   python scripts/generate_variants_build.py --config Generate_Tangerine_3D/procedural_track/configs/variants_batch_healthy.yaml --no-clean
+
+merge_existing_manifest: true
+
+glb_sources:
+  - name: tangerine0
+    path: data/Tangerine_3D/tangerine_0.glb
+  - name: tangerine1
+    path: data/Tangerine_3D/tangerine_1.glb
+  - name: tangerine2
+    path: data/Tangerine_3D/tangerine_2.glb
+
+output_dir: data/Tangerine_3D/glb_procedural
+
+gltf_bake_size: 2048
+gltf_bake_samples: 96
+gltf_bake_roughness: true
+gltf_bake_normal: true
+gltf_prefer_native_roughness: true
+
+random_seed: 42
+
+# 짧은 파일명은 축이 여러 개면 충돌하므로 full
+output_name_style: full
+
+size_variants:
+  values: [0.88, 1.0, 1.12]
+
+height_variants:
+  values: [0.95, 1.0, 1.05]
+
+squish_variants:
+  # 균형 잡힌 구(기준)
+  - label: round
+    scale_xy: 1.0
+    scale_z: 1.0
+  # 가로로 살짝 넓고 세로 짧음 (납작)
+  - label: oblate
+    scale_xy: 1.012
+    scale_z: 0.988
+  # 가로로 살짝 좁고 세로 김 (길쭉)
+  - label: prolate
+    scale_xy: 0.988
+    scale_z: 1.012
+
+color_variants:
+  - label: warm
+    rgb_mul: [1.06, 0.94, 0.88, 1.0]
+    roughness_mul: 0.98
+  - label: neutral
+    rgb_mul: [1.0, 1.0, 1.0, 1.0]
+    roughness_mul: 1.0
+  - label: yellow_green
+    rgb_mul: [0.97, 1.05, 0.93, 1.0]
+    roughness_mul: 1.02
+
+disease_params:
+  healthy:
+    base_color: [0.85, 0.35, 0.05, 1.0]
+    roughness: 0.22
+    specular: 0.50

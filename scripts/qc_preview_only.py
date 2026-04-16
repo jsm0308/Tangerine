@@ -12,6 +12,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+_BLENDER_SIM = ROOT / "src" / "blender_sim"
+if str(_BLENDER_SIM) not in sys.path:
+    sys.path.insert(0, str(_BLENDER_SIM))
+
+from disease_output_folder import disease_output_folder  # noqa: E402
 
 from config import load_pipeline_config  # noqa: E402
 
@@ -37,14 +42,14 @@ def main() -> int:
         print("Blender 없음", file=sys.stderr)
         return 1
 
-    out_dir = ROOT / "outputs" / "_variant_glb"
+    out_dir = ROOT / "data" / "Tangerine_3D" / "glb_procedural"
     qc_dir = out_dir / "_qc_previews"
     qc_dir.mkdir(parents=True, exist_ok=True)
     base = "tangerine0"
     diseases = ["healthy", "black_spot", "canker", "greening", "scab"]
     ok_all = True
     for dis in diseases:
-        glb = out_dir / f"{base}__{dis}.glb"
+        glb = out_dir / disease_output_folder(dis) / f"{base}__{dis}.glb"
         png = qc_dir / f"qc_only_{dis}.png"
         if not glb.is_file():
             print(f"[skip] 없음: {glb.name}")

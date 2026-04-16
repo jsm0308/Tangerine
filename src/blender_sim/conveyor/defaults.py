@@ -40,14 +40,14 @@ def default_config() -> Dict[str, Any]:
         "roller_collision_shape": "CONVEX_HULL",
         # 과일: sphere = 주황 UV 구(빠름) / glb_citrus = GLB 변종
         "fruit_kind": "sphere",
-        "citrus_glb_directory": "outputs/_variant_glb",
+        "citrus_glb_directory": "data/Tangerine_3D/glb_procedural",
         "citrus_spawn_total": 30,
         "preserve_glb_materials": True,
         # 디렉터리가 비어 있거나 없을 때만 사용 (예: 베이스 GLB 3종만)
         "citrus_glb_paths": [
-            "data/Tangerine_3D/glb/tangerine0.glb",
-            "data/Tangerine_3D/glb/tangerine1.glb",
-            "data/Tangerine_3D/glb/tangerine2.glb",
+            "Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine0.glb",
+            "Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine1.glb",
+            "Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine2.glb",
         ],
         "fruit_per_mesh": 10,
         "fruit_target_max_dim_m": 0.09,

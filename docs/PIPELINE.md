@@ -109,9 +109,9 @@
 | A0 | 컨베이어 벨트 GLB (정적) | `python Conveyor_Lab/scripts/export_conveyor_glb.py` | `.glb` + 설정 JSON | [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) §3 |
 | A | 롤러 컨베이어 데모 (MP4) | `python Conveyor_Lab/scripts/run_conveyor_demo.py` | `conveyor_run.mp4` 등 | 전부 [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) |
 | B | Healthy GLB 81종 빌드 | `python scripts/healthy_variants_build.py` | `outputs/.../healthy_variants_glb/*.glb` | **에셋 생성**; 학습용 프레임 메타와 직접 연결되지 않음 |
-| B1 | 베이스 GLB 3종 | 작업자 에셋 `tangerine0/1/2.glb` → `data/Tangerine_3D/glb/` (선택: `build_base_mesh.py` 로 아이코스피어) | `data/Tangerine_3D/glb/tangerine{0,1,2}.glb` | 변종 전에 필수 |
-| B1a | 병해 알베도 PNG (선택) | `python scripts/gen_disease_texture_masks.py` | `data/Tangerine_3D/textures/disease/*_albedo.png` | B2와 무관; 참고·2D 합성용 |
-| B2 | healthy 틴트 + 병해 오버레이 → EMIT 베이크 → glTF | `python scripts/generate_variants_build.py` (`data/Tangerine_3D/configs/variants_batch.yaml`) | `outputs/_variant_glb/*.glb` + `manifest.json` | B1 이후; [DISEASE_MATERIALS.md](DISEASE_MATERIALS.md) (클래스별 스펙); 기본 **15**개(베이스 3×병해 5; YAML에서 형태·색 그리드 확장 가능) |
+| B1 | 베이스 GLB 3종 | 작업자 에셋 `tangerine0/1/2.glb` → `Generate_Tangerine_3D/procedural_track/mesh_bases/` (선택: `build_base_mesh.py` 로 아이코스피어) | 동 경로 | 변종 전에 필수 |
+| B1a | 병해 알베도 PNG (선택) | `python scripts/gen_disease_texture_masks.py` | `Generate_Tangerine_3D/procedural_track/textures/disease/*_albedo.png` | B2와 무관; 참고·2D 합성용 |
+| B2 | healthy 틴트 + 병해 오버레이 → EMIT 베이크 → glTF | `python scripts/generate_variants_build.py` (`Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml`) | `data/Tangerine_3D/glb_procedural/*.glb` + `manifest.json` | B1 이후; [DISEASE_MATERIALS.md](DISEASE_MATERIALS.md) (클래스별 스펙); 기본 **15**개(베이스 3×병해 5; YAML에서 형태·색 그리드 확장 가능) |
 | C | 원천 이미지 전처리 | `scripts/remove_bg_crop_fruits.py`, `balance_fruits_by_class.py` 등 | `data/` 쪽 폴더 | **학습 데이터 준비**용; 파이프라인 필수 단계 아님 |
 
 **학습·리포트 GT 정본**은 **`simulation.py` 줄기(1단계)** 로 두는 것을 권장합니다.

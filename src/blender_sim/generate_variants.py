@@ -4,15 +4,16 @@
 
 실행:
   blender --background --python src/blender_sim/generate_variants.py \\
-          -- --config data/Tangerine_3D/configs/variants_batch.yaml
+          -- --config Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml
 
   # 실제 내보내기 없이 목록만 확인:
   blender --background --python src/blender_sim/generate_variants.py \\
-          -- --config data/Tangerine_3D/configs/variants_batch.yaml --dry-run
+          -- --config Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml --dry-run
 
 출력:
-  output_name_style short: <base>__<disease>.glb
-  output_name_style full:  <base>__<disease>__s<N>__q<N>__h<N>__c<N>.glb
+  output_name_style short: <output_dir>/<class folder>/<base>__<disease>.glb
+  output_name_style full:  <output_dir>/<class folder>/<base>__<disease>__s<N>__q<N>__h<N>__c<N>.glb
+  class folder 는 트랙2(glb_from_2d)와 동일 표기: healthy, Black spot, Canker, Greening, Scab
   <output_dir>/manifest.json
   기본 설정은 베이스 GLB 수 × 병해 종 수(예: 3×5 = 15); YAML에서 축 값을 늘리면 그리드 확장.
 """
@@ -31,6 +32,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 from disease_materials import apply_preserved_variant
+from disease_output_folder import disease_output_folder
 from gltf_material_bake import simplify_materials_for_gltf_export
 
 # 설정은 (1) --job-json (권장: 래퍼가 YAML→JSON) 또는 (2) --config YAML — 후자는 Blender 내 PyYAML 필요.
@@ -41,7 +43,10 @@ def _parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     p = argparse.ArgumentParser()
     p.add_argument("--job-json", default=None, help="래퍼가 만든 해석된 설정 JSON (PyYAML 불필요)")
-    p.add_argument("--config", default="data/Tangerine_3D/configs/variants_batch.yaml")
+    p.add_argument(
+        "--config",
+        default="Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml",
+    )
     p.add_argument("--dry-run", action="store_true", help="내보내기 없이 목록만 출력")
     return p.parse_args(argv)
 
@@ -219,14 +224,16 @@ def main():
 
     if args.dry_run:
         for j in jobs:
-            print(f"  DRY-RUN  {j['filename']}")
+            sub = disease_output_folder(j["disease"])
+            print(f"  DRY-RUN  {sub}/{j['filename']}")
         print(f"[Tangerine] dry-run 완료. {total}개 목록만 출력.")
         return
 
     manifest = []
 
     for idx, job in enumerate(jobs, 1):
-        print(f"[{idx:>4}/{total}] {job['filename']}")
+        sub = disease_output_folder(job["disease"])
+        print(f"[{idx:>4}/{total}] {sub}/{job['filename']}")
 
         glb_path = Path(job['glb_path'])
         if not glb_path.exists():
@@ -264,20 +271,31 @@ def main():
 
         # glTF 뷰어는 절차적 노드를 PBR로 못 넣어 알베도가 하얗게 떨어짐 → EMIT 베이크 후 단순 재질
         bake_sz = int(cfg.get("gltf_bake_size", 1024))
+        bm = cfg.get("gltf_bake_margin")
+        bake_margin = int(bm) if bm is not None else None
         simplify_materials_for_gltf_export(
             mesh_objs,
             job["disease"],
             cfg["disease_params"],
             bake_size=bake_sz,
             image_basename=job["filename"].replace(".glb", ""),
+            bake_samples=int(cfg.get("gltf_bake_samples", 96)),
+            bake_margin=bake_margin,
+            bake_roughness=bool(cfg.get("gltf_bake_roughness", True)),
+            bake_normal=bool(cfg.get("gltf_bake_normal", True)),
+            prefer_native_roughness=bool(cfg.get("gltf_prefer_native_roughness", True)),
         )
 
-        out_path = out_dir / job['filename']
+        class_dir = out_dir / sub
+        class_dir.mkdir(parents=True, exist_ok=True)
+        out_path = class_dir / job["filename"]
         _export_glb(out_path, imported)
 
         manifest.append(
             {
                 "filename": job["filename"],
+                "output_subdir": sub,
+                "relative_path": f"{sub}/{job['filename']}".replace("\\", "/"),
                 "base": job["base_name"],
                 "disease": job["disease"],
                 "size": job["size"],
@@ -289,8 +307,23 @@ def main():
         )
 
     manifest_path = out_dir / 'manifest.json'
+    out_list = manifest
+    if cfg.get("merge_existing_manifest") and manifest_path.is_file():
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                old = json.load(f)
+            if isinstance(old, list):
+                # 같은 폴더에 병해 GLB가 이미 있을 때: healthy-only 재빌드로 manifest 전체를 덮지 않음
+                out_list = [
+                    e
+                    for e in old
+                    if (e.get("disease") != "healthy" and e.get("output_subdir") != "healthy")
+                ] + manifest
+        except (OSError, json.JSONDecodeError):
+            out_list = manifest
+
     with open(manifest_path, 'w', encoding='utf-8') as f:
-        json.dump(manifest, f, indent=2, ensure_ascii=False)
+        json.dump(out_list, f, indent=2, ensure_ascii=False)
 
     print(f"[Tangerine] 완료. manifest → {manifest_path}")
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
-Blender 헤드리스로 data/Tangerine_3D/configs/variants_batch.yaml 기준 변종 GLB 배치.
+Blender 헤드리스로 Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml 기준 변종 GLB 배치.
 
   python scripts/generate_variants_build.py --dry-run
   python scripts/generate_variants_build.py
-  python scripts/generate_variants_build.py --config data/Tangerine_3D/configs/variants_batch.yaml
+  python scripts/generate_variants_build.py --config Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml
+  python scripts/generate_variants_build.py --no-clean   # 기존 산출 유지
 
-산출물: outputs/_variant_glb/*.glb (기본 output_dir; YAML에서 변경 가능), manifest.json
+기본적으로 output_dir 를 비운 뒤 다시 빌드한다(프로토타입용). 유지하려면 --no-clean.
+
+산출물: data/Tangerine_3D/glb_procedural/<클래스 폴더>/*.glb (트랙2 glb_from_2d 와 동일 폴더명), manifest.json
 """
 
 from __future__ import annotations
@@ -38,11 +41,28 @@ def _blender_exe(cfg) -> str:
     return shutil.which("blender") or shutil.which("blender.exe") or ""
 
 
+def _clean_output_dir(out_dir: Path) -> None:
+    """프로토타입 재빌드: GLB·manifest·QC·하위 클래스 폴더 전부 제거(.gitkeep 유지)."""
+    if not out_dir.is_dir():
+        return
+    for child in list(out_dir.iterdir()):
+        if child.name == ".gitkeep":
+            continue
+        try:
+            if child.is_dir():
+                shutil.rmtree(child, ignore_errors=False)
+            else:
+                child.unlink(missing_ok=True)
+        except OSError as e:
+            print(f"[clean] 건너뜀/실패: {child}: {e}", file=sys.stderr)
+    print(f"[clean] 비움: {out_dir}", flush=True)
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="generate_variants (Blender batch)")
     p.add_argument(
         "--config",
-        default="data/Tangerine_3D/configs/variants_batch.yaml",
+        default="Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml",
         help="변종 YAML",
     )
     p.add_argument(
@@ -51,6 +71,11 @@ def main() -> int:
         help="Blender 실행 파일 경로용 파이프라인 YAML",
     )
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--no-clean",
+        action="store_true",
+        help="빌드 전 output_dir 를 비우지 않음 (기본: 비움)",
+    )
     args = p.parse_args()
 
     os.chdir(ROOT)
@@ -89,6 +114,9 @@ def main() -> int:
         src["path"] = _abs(src["path"])
 
     out_dir = Path(variant_data["output_dir"])
+    if not args.dry_run and not args.no_clean:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        _clean_output_dir(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     job_path = out_dir / "_resolved_job.json"
     with open(job_path, "w", encoding="utf-8") as f:
@@ -107,8 +135,12 @@ def main() -> int:
         str(job_path.resolve()),
         *extra,
     ]
-    print(" ".join(cmd))
+    print(" ".join(cmd), flush=True)
     subprocess.run(cmd, check=True)
+    if not args.dry_run:
+        org = ROOT / "scripts" / "organize_flat_variant_glbs.py"
+        if org.is_file():
+            subprocess.run([sys.executable, str(org), "--dir", str(out_dir)], check=False)
     return 0
 
 

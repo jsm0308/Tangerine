@@ -1,0 +1,100 @@
+# =============================================================================
+# 변종 GLB — 원본 healthy 재질 유지 + 틴트 증강 + 병해 알베도 오버레이 (트랙 1: 절차 셰이더)
+# =============================================================================
+# 베이스 메시: Generate_Tangerine_3D/procedural_track/mesh_bases/*.glb
+# 산출(최종): data/Tangerine_3D/glb_procedural/<healthy|Black spot|Canker|Greening|Scab>/
+# 실행: python scripts/generate_variants_build.py
+# =============================================================================
+
+glb_sources:
+  - name: tangerine0
+    path: Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine0.glb
+  - name: tangerine1
+    path: Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine1.glb
+  - name: tangerine2
+    path: Generate_Tangerine_3D/procedural_track/mesh_bases/tangerine2.glb
+
+output_dir: data/Tangerine_3D/glb_procedural
+
+# 파일 수가 줄었으므로 베이크 해상도 상향 여지 (뷰어용 알베도 품질)
+gltf_bake_size: 2048
+# glTF 호환 베이크: Cycles 샘플(높을수록 Voronoi/노이즈 안정), 픽셀 마진(UV 경계)
+gltf_bake_samples: 96
+# gltf_bake_margin: 24   # 비우면 해상도에 따라 자동
+gltf_bake_roughness: true
+gltf_bake_normal: true
+gltf_prefer_native_roughness: true
+
+random_seed: 42
+
+output_name_style: short
+
+size_variants:
+  values: [1.0]
+
+height_variants:
+  values: [1.0]
+
+squish_variants:
+  - label: neutral
+    scale_xy: 1.0
+    scale_z: 1.0
+
+color_variants:
+  - label: neutral
+    rgb_mul: [1.0, 1.0, 1.0, 1.0]
+    roughness_mul: 1.0
+
+disease_params:
+
+  healthy:
+    base_color: [0.85, 0.35, 0.05, 1.0]
+    roughness: 0.22
+    specular: 0.50
+
+  black_spot:
+    voronoi_scale: 82.0
+    voronoi_smooth: 0.9
+    voronoi_randomness: 0.88
+    spot_use_f2_minus_f1: true
+    spot_f2f1_map_scale: 2.4
+    spot_warp_strength: 0.052
+    spot_warp_noise_scale: 12.0
+    spot_dist_map_max: 0.22
+    spot_ramp_pos: 0.36
+    spot_ramp_interpolation: LINEAR
+    spot_mix_boost: 1.28
+    spot_color_hex: "#0C0806"
+    spot_dark_hex: "#040201"
+    overlay_bump_strength: 0.11
+    spot_rough: 0.88
+
+  canker:
+    lesion_scale: 25.0
+    roughness: 0.48
+    canker_de_span: 0.3
+    canker_overlay_in: 0.0
+    canker_overlay_out: 0.4
+    overlay_strength: 0.88
+    disp_scale: 1.0
+
+  greening:
+    mottle_scale: 2.4
+    greening_noise_scale: 7.5
+    mottle_ramp_lo: 0.18
+    mottle_ramp_hi: 0.82
+    roughness: 0.48
+    overlay_strength: 0.92
+    greening_boost: 1.38
+    green_tint_hex: "#267030"
+    greening_yellow_hex: "#A4C060"
+    greening_olive_hex: "#4A7D3E"
+    greening_orange_hex: "#E88A28"
+
+  scab:
+    roughness: 0.86
+    scab_noise_a_scale: 20.0
+    scab_noise_b_scale: 14.0
+    scab_mask_pos: 0.68
+    scab_disp_scale: 0.006
+    overlay_strength: 0.78

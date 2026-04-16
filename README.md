@@ -25,8 +25,9 @@ Tangerine/
 ├── configs/
 │   ├── README.txt            # default_config 역할
 │   └── default_config.yaml   # 전역 파이프라인 + Blender 경로
+├── Generate_Tangerine_3D/   # 3D 생성 2트랙: procedural_track (설정·베이스 메시), from_2d_track (2D→3D)
 ├── data/
-│   └── Tangerine_3D/         # 귤 3D 에셋·설정·변종 산출 (glb, textures, configs, outputs)
+│   └── Tangerine_3D/         # 최종 GLB만: glb_procedural / glb_from_2d
 ├── CONFIG_KEYS.md          # 설정 키 참조표
 ├── requirements.txt
 ├── README.md                 # 이 파일
@@ -36,11 +37,11 @@ Tangerine/
 │   ├── REPOSITORY.md         # 핵심 폴더·파일 안내
 │   └── …                     # CONVEYOR_DEMO(리다이렉트), SERAPH, DISEASE_MATERIALS 등 (INDEX.md)
 ├── assets/
-│   └── README.txt            # → data/Tangerine_3D 안내
+│   └── README.txt            # → data/Tangerine_3D · Generate_Tangerine_3D 안내
 ├── scripts/
 │   ├── healthy_variants_build.py # 81종 형태 GLB + healthy 텍스처 배치
-│   ├── build_base_mesh.py         # (선택) 아이코스피어 베이스 — 기본은 data/Tangerine_3D/glb
-│   ├── generate_variants_build.py # 병해 변종 GLB (data/Tangerine_3D/configs/variants_batch.yaml)
+│   ├── build_base_mesh.py         # (선택) 아이코스피어 베이스 → procedural_track/mesh_bases
+│   ├── generate_variants_build.py # 병해 변종 GLB → data/Tangerine_3D/glb_procedural
 │   ├── variant_qc_pipeline.py     # 렌더 QC 루프(실패 시 disease_params 보정·재빌드)
 │   ├── qc_preview_only.py        # 기존 GLB 미리보기 PNG + 수치 QC만
 │   ├── fruit_class_mesh_build.py # 클래스별 GLB 배치 (data/Fruits/)
@@ -127,6 +128,7 @@ python main.py --stage all --config configs/default_config.yaml
 - **[docs/INDEX.md](docs/INDEX.md)** — 문서 색인 (여기서부터)  
 - **[docs/REPOSITORY.md](docs/REPOSITORY.md)** — **핵심 폴더·파일** 한눈 요약  
 - **[docs/PIPELINE.md](docs/PIPELINE.md)** — 메인 0~4단계, 부가 경로(B·컨베이어) 표  
+- **[docs/3D_GENERATION_NOTES.md](docs/3D_GENERATION_NOTES.md)** — 절차 3D 변종 GLB: **현재 방식·시도 기록**(프로토타입 반복용)  
 - **[Conveyor_Lab/docs/CONVEYOR.md](Conveyor_Lab/docs/CONVEYOR.md)** — 컨베이어 데모 전용 (실행·산출·설정)  
 - **[docs/SERAPH.md](docs/SERAPH.md)** — **Seraph 한 문서:** 로컬 vs 서버, Git, SSH·Conda·Blender, 실행, 변종 GLB  
 - [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보  

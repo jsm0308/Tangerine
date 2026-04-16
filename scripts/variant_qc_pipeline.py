@@ -5,7 +5,7 @@
   python scripts/variant_qc_pipeline.py
   python scripts/variant_qc_pipeline.py --max-iter 4
 
-선행: Blender, PyYAML, Pillow, numpy. 산출은 variants_batch 의 output_dir(기본 outputs/_variant_glb).
+선행: Blender, PyYAML, Pillow, numpy. 산출은 variants_batch 의 output_dir(기본 data/Tangerine_3D/glb_procedural).
 """
 
 from __future__ import annotations
@@ -25,6 +25,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+_BLENDER_SIM = ROOT / "src" / "blender_sim"
+if str(_BLENDER_SIM) not in sys.path:
+    sys.path.insert(0, str(_BLENDER_SIM))
+
+from disease_output_folder import disease_output_folder  # noqa: E402
 
 try:
     import yaml
@@ -125,7 +130,10 @@ def apply_fail_tweaks(working: dict, failures: dict[str, dict]) -> None:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Build variant GLBs with QC loop")
-    p.add_argument("--config", default="data/Tangerine_3D/configs/variants_batch.yaml")
+    p.add_argument(
+        "--config",
+        default="Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml",
+    )
     p.add_argument("--pipeline-config", default="configs/default_config.yaml")
     p.add_argument("--max-iter", type=int, default=4)
     p.add_argument("--base-mesh", default="tangerine0", help="QC 미리보기에 쓸 베이스 이름")
@@ -152,7 +160,7 @@ def main() -> int:
         base_cfg = yaml.safe_load(f)
 
     diseases = list((base_cfg.get("disease_params") or {}).keys())
-    out_dir = Path(base_cfg.get("output_dir", "outputs/_variant_glb"))
+    out_dir = Path(base_cfg.get("output_dir", "data/Tangerine_3D/glb_procedural"))
     if not out_dir.is_absolute():
         out_dir = (ROOT / out_dir).resolve()
 
@@ -188,7 +196,7 @@ def main() -> int:
         failures: dict[str, dict] = {}
         for dis in diseases:
             glb_name = f"{args.base_mesh}__{dis}.glb"
-            glb_path = out_dir / glb_name
+            glb_path = out_dir / disease_output_folder(dis) / glb_name
             if not glb_path.is_file():
                 print(f"[QC] missing {glb_path}", flush=True)
                 failures[dis] = {"error": "missing_glb"}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -37,6 +37,8 @@ class TrainConfig:
 
     # TensorBoard / 체크포인트
     experiment_name: str = "tangerine_2d"
+    # best.pt 선택: 고 acc만 믿기 어려울 때 val_f1_macro
+    best_metric: str = "val_accuracy"  # val_accuracy | val_f1_macro
 
     # XAI: Grad-CAM 샘플 수 (테스트·검증에서 뽑는 총 장수 상한)
     xai_num_samples: int = 12
@@ -45,6 +47,9 @@ class TrainConfig:
         s = self.train_ratio + self.val_ratio + self.test_ratio
         if abs(s - 1.0) > 1e-6:
             raise ValueError(f"train/val/test 비율 합이 1이 아님: {s}")
+        allowed = ("val_accuracy", "val_f1_macro")
+        if self.best_metric not in allowed:
+            raise ValueError(f"best_metric은 {allowed} 중 하나여야 함: {self.best_metric!r}")
 
     def effective_output_dir(self) -> Path:
         return self.output_dir / self.experiment_name

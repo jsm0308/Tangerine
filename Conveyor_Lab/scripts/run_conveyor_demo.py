@@ -2,7 +2,7 @@
 """
 프로시저 컨베이어(5m 롤러) + GLB 스폰 또는 구 물리 데모.
 
-- 기본: `outputs/_variant_glb/` 에서 GLB 30개(병해 재질 유지), 폴더가 없으면 `data/Tangerine_3D/glb/` 3종×10
+- 기본: `data/Tangerine_3D/glb_procedural/` 에서 GLB 30개(병해 재질 유지), 폴더가 없으면 `Generate_Tangerine_3D/procedural_track/mesh_bases/` 3종×10
 
   python Conveyor_Lab/scripts/run_conveyor_demo.py
 

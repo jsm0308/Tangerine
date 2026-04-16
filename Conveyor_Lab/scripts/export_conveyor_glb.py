@@ -3,7 +3,7 @@
 프로시저 컨베이어(롤러·데크·레일·다리·바구니 등)를 `defaults.py`와 동일한 규격으로 빌드해 GLB로 내보냄.
 
   python Conveyor_Lab/scripts/export_conveyor_glb.py
-  python Conveyor_Lab/scripts/export_conveyor_glb.py --out data/Tangerine_3D/glb/conveyor_belt.glb
+  python Conveyor_Lab/scripts/export_conveyor_glb.py --out Generate_Tangerine_3D/procedural_track/mesh_bases/conveyor_belt.glb
   python Conveyor_Lab/scripts/export_conveyor_glb.py --overrides my_overrides.json
 
 기울기는 `defaults.py` 의 `conveyor_pitch_deg` 등(또는 overrides JSON)과 동일하게 적용됩니다.

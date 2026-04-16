@@ -18,6 +18,31 @@ from disease_materials import (
 
 def overlay_black_spot(nd, links, bsdf, tinted_base_sock, params: dict, out_nd, x0: float):
     tc = _n(nd, "ShaderNodeTexCoord", (x0 - 800, 0))
+    # 좌표 워프: 규격 격자·후추 느낌 완화
+    warp_n = _n(nd, "ShaderNodeTexNoise", (x0 - 720, -200))
+    warp_n.inputs["Scale"].default_value = float(params.get("spot_warp_noise_scale", 14.0))
+    warp_n.inputs["Detail"].default_value = float(params.get("spot_warp_detail", 4.0))
+    warp_n.inputs["Roughness"].default_value = 0.55
+    links.new(tc.outputs["Object"], warp_n.inputs["Vector"])
+    w_amp = _n(nd, "ShaderNodeValue", (x0 - 720, -320))
+    w_amp.outputs[0].default_value = float(params.get("spot_warp_strength", 0.045))
+    w_bw = _n(nd, "ShaderNodeRGBToBW", (x0 - 560, -280))
+    links.new(warp_n.outputs["Color"], w_bw.inputs["Color"])
+    w_scl = _n(nd, "ShaderNodeMath", (x0 - 560, -260))
+    w_scl.operation = "MULTIPLY"
+    links.new(w_bw.outputs["Val"], w_scl.inputs[0])
+    links.new(w_amp.outputs[0], w_scl.inputs[1])
+    w_xyz = _n(nd, "ShaderNodeCombineXYZ", (x0 - 440, -240))
+    for axis in ("X", "Y", "Z"):
+        if axis in w_xyz.inputs:
+            links.new(w_scl.outputs[0], w_xyz.inputs[axis])
+    wadd = _n(nd, "ShaderNodeVectorMath", (x0 - 320, -120))
+    wadd.operation = "ADD"
+    links.new(tc.outputs["Object"], wadd.inputs[0])
+    wv = w_xyz.outputs.get("Vector") or w_xyz.outputs[0]
+    links.new(wv, wadd.inputs[1])
+    vec_for_vor = wadd.outputs["Vector"]
+
     vor = _n(nd, "ShaderNodeTexVoronoi", (x0 - 560, 0))
     ramp = _n(nd, "ShaderNodeValToRGB", (x0 - 320, 0))
     vor.voronoi_dimensions = "3D"
@@ -28,11 +53,40 @@ def overlay_black_spot(nd, links, bsdf, tinted_base_sock, params: dict, out_nd, 
         vor.inputs["Randomness"].default_value = float(params.get("voronoi_randomness", 0.92))
     if "Smoothness" in vor.inputs:
         vor.inputs["Smoothness"].default_value = float(params.get("voronoi_smooth", 0.88))
-    links.new(tc.outputs["Object"], vor.inputs["Vector"])
-    dist_sock = vor.outputs.get("Distance") or vor.outputs[1]
-    dmap = _n(nd, "ShaderNodeMapRange", (x0 - 380, 0))
-    dmap.inputs["From Min"].default_value = 0.0
-    dmap.inputs["From Max"].default_value = float(params.get("spot_dist_map_max", 0.18))
+    links.new(vec_for_vor, vor.inputs["Vector"])
+    dist_f1 = vor.outputs.get("Distance") or vor.outputs[1]
+
+    use_f2f1 = bool(params.get("spot_use_f2_minus_f1", True))
+    if use_f2f1:
+        vor2 = _n(nd, "ShaderNodeTexVoronoi", (x0 - 560, 140))
+        vor2.voronoi_dimensions = "3D"
+        vor2.feature = "F2"
+        _vor_metric_euclidean(vor2)
+        vor2.inputs["Scale"].default_value = float(params.get("voronoi_scale", 175.0))
+        if "Randomness" in vor2.inputs:
+            vor2.inputs["Randomness"].default_value = float(params.get("voronoi_randomness", 0.92))
+        if "Smoothness" in vor2.inputs:
+            vor2.inputs["Smoothness"].default_value = float(params.get("voronoi_smooth", 0.88))
+        links.new(vec_for_vor, vor2.inputs["Vector"])
+        dist_f2 = vor2.outputs.get("Distance") or vor2.outputs[1]
+        df = _n(nd, "ShaderNodeMath", (x0 - 400, 80))
+        df.operation = "SUBTRACT"
+        df.use_clamp = False
+        links.new(dist_f2, df.inputs[0])
+        links.new(dist_f1, df.inputs[1])
+        absm = _n(nd, "ShaderNodeMath", (x0 - 400, 20))
+        absm.operation = "ABSOLUTE"
+        links.new(df.outputs[0], absm.inputs[0])
+        dist_sock = absm.outputs[0]
+        f2f1_scale = float(params.get("spot_f2f1_map_scale", 2.8))
+        dmap = _n(nd, "ShaderNodeMapRange", (x0 - 380, 0))
+        dmap.inputs["From Min"].default_value = 0.0
+        dmap.inputs["From Max"].default_value = float(params.get("spot_dist_map_max", 0.18)) * f2f1_scale
+    else:
+        dist_sock = dist_f1
+        dmap = _n(nd, "ShaderNodeMapRange", (x0 - 380, 0))
+        dmap.inputs["From Min"].default_value = 0.0
+        dmap.inputs["From Max"].default_value = float(params.get("spot_dist_map_max", 0.18))
     dmap.inputs["To Min"].default_value = 0.0
     dmap.inputs["To Max"].default_value = 1.0
     if hasattr(dmap, "use_clamp"):

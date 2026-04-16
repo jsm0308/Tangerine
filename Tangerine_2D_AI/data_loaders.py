@@ -159,6 +159,21 @@ def make_dataloaders(
         cfg.seed,
     )
 
+    n_cls = len(class_names)
+    for split_name, y_split in (
+        ("train", y_tr),
+        ("val", y_va),
+        ("test", y_te),
+    ):
+        present = set(y_split)
+        missing = set(range(n_cls)) - present
+        if missing:
+            miss_names = [class_names[i] for i in sorted(missing)]
+            print(
+                f"WARNING: '{split_name}' 분할에 샘플이 없는 클래스 인덱스 {sorted(missing)} "
+                f"({miss_names}). 클래스당 이미지 수를 늘리거나 분할 비율을 조정하세요."
+            )
+
     class_to_idx = {n: i for i, n in enumerate(class_names)}
     meta: dict[str, Any] = {
         "class_names": class_names,

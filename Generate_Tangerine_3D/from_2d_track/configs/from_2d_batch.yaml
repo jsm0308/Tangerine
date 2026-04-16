@@ -1,0 +1,42 @@
+# =============================================================================
+# 트랙 2 — 2D 이미지(클래스 폴더) → 베이스 메쉬 GLB
+# =============================================================================
+# 기본: 병변 마스크 → RGBA 패치 → UV 알베도 텍스처 스탬프 (Texture Paint와 동일한 2D 합성)
+# 레거시(BOX 투영+정점색): decal.enabled: false → fruit_class_mesh_export
+# 런처: scripts/build_glb_from_2d.py
+# =============================================================================
+
+# torchvision ImageFolder 스타일: 하위 폴더명 = 클래스 라벨
+# (레포에 data/Fruits 가 없으면 data/Tangerine_2D 를 쓴다 — Tangerine_2D_AI 과 동일 구조)
+fruits_root: data/Tangerine_2D
+
+# 베이스 healthy GLB — data/Tangerine_3D/ 루트에 tangerine_0~2.glb (자동 폴백 없음)
+mesh_paths:
+  - data/Tangerine_3D/tangerine_0.glb
+  - data/Tangerine_3D/tangerine_1.glb
+  - data/Tangerine_3D/tangerine_2.glb
+
+# 최종 GLB만 이 폴더에 쌓는다 (레포 정책)
+output_dir: data/Tangerine_3D/glb_from_2d
+
+# 생성할 GLB 총 개수 (클래스 수로 균등 분배)
+total_exports: 15
+
+resume: false
+
+# --- 병변 UV 텍스처 스프레이 (기본 on; 예전 decals_per_asset 도 stamps 로 인식) ---
+decal:
+  enabled: true
+  cache_dir: Generate_Tangerine_3D/from_2d_track/decal_cache
+  sam_checkpoint: ""
+  sam_model_type: vit_b
+  max_masks_per_image: 6
+  min_mask_area_ratio: 0.0012
+  max_mask_area_ratio: 0.45
+  alpha_feather_px: 6.0
+  poisson_seamless_clone: true
+  stamps_per_asset: 4
+  texture_resolution: 2048
+  stamp_uv_radius: 0.06
+  # 베이스 GLB(healthy)에 실린 알베도·UV 우선 사용; false 면 새 UV unwrap + 단색/고정 peel
+  use_healthy_albedo_base: true

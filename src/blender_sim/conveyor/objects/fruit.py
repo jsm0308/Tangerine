@@ -195,7 +195,7 @@ def build_citrus_glb_sequence(cfg: Dict[str, Any], project_root: Path | None = N
     """
     스폰에 쓸 GLB 경로 목록 (프로젝트 루트 상대 문자열).
 
-    - ``citrus_glb_directory`` 가 비어 있지 않으면: 해당 폴더의 ``*.glb`` 중
+    - ``citrus_glb_directory`` 가 비어 있지 않으면: 해당 폴더 및 하위 폴더의 ``*.glb`` 중
       ``citrus_spawn_total`` 개까지 (기본 30), 셔플 옵션 적용.
     - 비어 있으면: ``citrus_glb_paths`` × ``fruit_per_mesh`` (기존 동작).
     """
@@ -206,8 +206,13 @@ def build_citrus_glb_sequence(cfg: Dict[str, Any], project_root: Path | None = N
         if dirp.is_dir():
             glbs = sorted(
                 p
-                for p in dirp.glob("*.glb")
-                if p.is_file() and not p.name.startswith("_")
+                for p in dirp.rglob("*.glb")
+                if p.is_file()
+                and not p.name.startswith("_")
+                and not any(
+                    part.startswith("_")
+                    for part in p.relative_to(dirp).parts[:-1]
+                )
             )
             if glbs:
                 total = int(cfg.get("citrus_spawn_total", min(30, len(glbs))))

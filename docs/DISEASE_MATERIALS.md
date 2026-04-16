@@ -1,7 +1,7 @@
 # 병해 클래스별 절차 재질 스펙 (읽는 사람용)
 
 감귤 표면은 **원래 알베도(색)에 살짝 틴트를 입힌 뒤**, 그 위에 수학 패턴으로 병만 덧칠하는 방식이다.  
-설정 파일은 `data/Tangerine_3D/configs/variants_batch.yaml` 안의 **`disease_params`** 블록이고, 실제 그림은 `src/blender_sim/disease_overlays.py` 가 만든다.
+설정 파일은 `Generate_Tangerine_3D/procedural_track/configs/variants_batch.yaml` 안의 **`disease_params`** 블록이고, 실제 그림은 `src/blender_sim/disease_overlays.py` 가 만든다.
 
 아래에서 **색 코드**는 `#` 육 자리(웹에서 흔히 쓰는 형식)이며, **옆에 어떤 색인지** 한글로 적어 두었다.
 
@@ -173,17 +173,42 @@ YAML 에서 `greening_yellow_hex` 등으로 바꿀 수 있다.
 
 ## 품질을 더 올리고 싶을 때
 
+### glTF 베이크(다중 맵·샘플)
+
+내보내기 직전 파이프라인은 대략 다음을 수행한다 (`src/blender_sim/gltf_material_bake.py`).
+
+- **알베도**: Principled Base Color를 EMIT로 베이크한다.
+- **거칠기**: 동일 재질에서 Roughness(공간 변조 포함)를 그레이스케일로 EMIT 베이크하거나, Blender가 지원하면 `ROUGHNESS` 패스를 쓴다. glTF에는 거칠기 텍스처로 연결된다.
+- **노멀**: **지오메트리** 접선 노멀을 베이크한다(셰이더 범프·디스플레이스는 포함되지 않음). 부드러운 구형 메시에서는 거의 평탄해 보일 수 있다. 질감은 거칠기·알베도에 더 의존한다.
+
+`variants_batch.yaml` 에서 조절할 수 있는 예:
+
+| 항목 | 의미 |
+|------|------|
+| `gltf_bake_size` | 알베도·거칠기·노멀 텍스처 해상도(픽셀). |
+| `gltf_bake_samples` | Cycles EMIT 베이크 샘플. Voronoi/노이즈가 거칠면 올린다(기본 96). |
+| `gltf_bake_margin` | UV 섬 픽셀 마진(비우면 해상도에 맞게 자동). |
+| `gltf_bake_roughness` / `gltf_bake_normal` | 거칠기·노멀 베이크 켜기/끄기. |
+| `gltf_prefer_native_roughness` | 지원 시 Blender `ROUGHNESS` 베이크를 먼저 시도. |
+
+### 베이크 전후 QC(빠르게)
+
+1. **Blender 뷰포트(재질 미리보기)** 또는 `scripts/qc_preview_only.py` 로 **베이크 전** 절차 셰이더 결과를 본다.  
+2. 같은 카메라·조명으로 **`generate_variants_build.py` 산출 GLB**를 뷰어에서 연다.  
+3. **반점이 흐려짐·줄무늬** → `gltf_bake_size`·`gltf_bake_samples`·`gltf_bake_margin` 을 조정.  
+4. **광택만 이상함** → 거칠기 맵이 빠졌는지(로그 `[WARN] 거칠기 베이크 실패`), YAML `gltf_bake_roughness` 확인.
+
 ### 렌더로 굽는 해상도
 
 `variants_batch.yaml` 의 **`gltf_bake_size`** (기본 2048): 숫자를 키우면 **무늬 경계가 덜 깨져** 보인다. 대신 시간·메모리가 늘어난다.
 
 ### 위 표만으로 부족할 때
 
-- **실제 사진에 더 가깝게** 하려면: 나중에 **거칠기 맵·노멀 맵**을 그림으로 만들어 붙이거나, Substance 같은 툴을 쓰는 방법이 있다 (작업량은 큼).
+- **실제 사진에 더 가깝게** 하려면: 손으로 그린 **알베도·거칠기**를 붙이거나, Substance 같은 툴을 쓰는 방법이 있다 (작업량은 큼). 절차 셰이더 경로는 이제 거칠기까지 베이크한다.
 - **반점만 격자 같음**: 위 Black spot 표에서 “촘촘함”, “경계 부드러움”, “덩어리 크기” 줄을 순서대로 만져 본다.
 - **궤양이 너무 큼/작음**: Canker 표의 덩어리 크기·덮는 구간·섞기 강도.
 - **녹이 약함/과함**: Greening 표의 섞기·부스트·얼룩 구간.
 
 ### 참고용으로 만든 2D 그림
 
-`scripts/gen_disease_texture_masks.py` 가 만든 PNG 는 **미리 보기·비교용**에 가깝다. 지금 메인으로 쓰는 건 위 **절차 셰이더 → 굽기** 경로다.
+`scripts/gen_disease_texture_masks.py` 가 만든 PNG 는 `Generate_Tangerine_3D/procedural_track/textures/disease/` 에 쌓이며, **미리 보기·비교용**에 가깝다. 지금 메인으로 쓰는 건 위 **절차 셰이더 → 굽기** 경로다.

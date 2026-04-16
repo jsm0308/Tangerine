@@ -12,6 +12,17 @@ data/Tangerine_2D/
 # 이전 빌드 산출(변종 GLB는 레포 루트 outputs/_variant_glb 에 통일; 여기는 중복 보관 시 무시)
 data/Tangerine_3D/outputs/
 
+# 3D 베이스·빌드 산출 GLB (용량 큼 — Seraph/rsync로 동기화; YAML 경로만 레포에 둠)
+data/Tangerine_3D/*.glb
+data/Tangerine_3D/glb_from_2d/**/*.glb
+data/Tangerine_3D/glb_procedural/**/*.glb
+data/Tangerine_3D/glb_procedural/manifest.json
+data/Tangerine_3D/glb_procedural/_resolved_job.json
+Generate_Tangerine_3D/procedural_track/mesh_bases/*.glb
+
+# 로컬 2D 실험 산출
+tangerine_2d_results/
+
 # 로컬 데이터/노트북 덤프(zip은 레포에 넣지 않음)
 /Tangerine_2D_AI.zip
 /data/Tangerine_2D.zip
@@ -29,3 +40,6 @@ venv/
 *.onnx
 runs/
 wandb/
+
+# 데칼 파이프라인 중간 패치·manifest (용량 큼 — 필요 시 커밋에서 제외)
+Generate_Tangerine_3D/from_2d_track/decal_cache/

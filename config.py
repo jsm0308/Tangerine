@@ -70,8 +70,8 @@ class BlenderConfig:
 
     # Blender 실행 파일 전체 경로. 비우면 시스템 PATH 의 `blender` / `blender.exe` 사용.
     blender_executable: str = ""
-    # 메시·이미지 텍스처 등 에셋 루트 (기본 `data/Tangerine_3D`)
-    assets_root: str = "data/Tangerine_3D"
+    # 메시·이미지 텍스처 등 에셋 루트 (기본: 절차 트랙 생성 폴더)
+    assets_root: str = "Generate_Tangerine_3D/procedural_track"
     # 한 에피소드에서 생성할 귤 개수: 최소값 (무작위 범위의 하한)
     citrus_count_min: int = 2
     # 한 에피소드에서 생성할 귤 개수: 최대값 (무작위 범위의 상한)

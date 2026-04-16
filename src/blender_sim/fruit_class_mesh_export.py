@@ -4,7 +4,8 @@ Blender: data/Fruits/ 아래 클래스 폴더별로 3D GLB 배치 (기본 15개 
 - 베이스: data/*.glb 중 최대 메시 1개 (순환)
 - 형태: 크기·납작·경미 울퉁 (healthy_variants와 동일 계열)
 - 재질: (1) 폴더 내 실제 이미지 1장 혼합 (2) 클래스별 정점 색 “병변 얼룩”
-- UV: 구면 투영 우선 → 실패 시 스마트 언랩
+- UV: decimate 후 구면 unwrap(가능 시) — 알베도는 Object+BOX 투영으로 UV 깨짐에 덜 의존
+- 임포트 후 remove_doubles 로 겹침 완화
 
 glTF는 점 색(COLOR_0) + 이미지 텍스처 조합을 잘 내보냅니다.
 """
@@ -88,6 +89,20 @@ def _import_main_mesh(mesh_path: Path) -> bpy.types.Object:
     return obj
 
 
+def _mesh_cleanup(obj: bpy.types.Object) -> None:
+    """중복 정점·노멀 정리 — 임포트 메쉬의 겹침·Z-fighting 완화."""
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    try:
+        bpy.ops.mesh.remove_doubles(threshold=0.00025)
+        bpy.ops.mesh.normals_make_consistent(inside=False)
+    except Exception:
+        pass
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
 def _decimate_if_needed(obj: bpy.types.Object, max_faces: int = 10000) -> None:
     """고폴리에서 정점색·UV가 과도하게 느려지므로 면 수 상한."""
     mesh = obj.data
@@ -125,19 +140,34 @@ def _apply_bump(obj: bpy.types.Object, strength: float, seed: int) -> None:
 
 
 def _uv_sphere_or_smart(obj: bpy.types.Object) -> None:
-    """sphere_project 는 고폴리에서 매우 느리거나 멈출 수 있어 smart_project 만 사용."""
+    """
+    구면 과일: decimate 이후면 sphere_project 로 한 장의 UV를 깔아 glTF 베이크·뷰어에 유리.
+    실패·고폴리면 smart_project 폴백 (이미지는 셰이더 BOX 투영으로 UV 의존 완화).
+    """
+    nfaces = len(obj.data.polygons)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     try:
-        bpy.ops.uv.smart_project(
-            angle_limit=math.radians(66.0),
-            island_margin=0.02,
-            correct_aspect=True,
-            scale_to_bounds=True,
-        )
+        if nfaces <= 24000:
+            bpy.ops.uv.sphere_project()
+        else:
+            bpy.ops.uv.smart_project(
+                angle_limit=math.radians(66.0),
+                island_margin=0.02,
+                correct_aspect=True,
+                scale_to_bounds=True,
+            )
     except Exception:
-        bpy.ops.uv.unwrap(method="ANGLE_BASED", margin=0.02)
+        try:
+            bpy.ops.uv.smart_project(
+                angle_limit=math.radians(66.0),
+                island_margin=0.02,
+                correct_aspect=True,
+                scale_to_bounds=True,
+            )
+        except Exception:
+            bpy.ops.uv.unwrap(method="ANGLE_BASED", margin=0.02)
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
@@ -212,7 +242,13 @@ def _build_material_export_safe(
     image: Optional[bpy.types.Image],
     vertex_color_attr: str,
 ) -> bpy.types.Material:
-    """Principled + (선택) 이미지 + 점색 — glTF 호환 위주."""
+    """
+    Principled + 점색 + (선택) 사진.
+
+    사진은 UV(FLAT)에 의존하지 않도록 Object 좌표 + BOX 투영(경계 블렌드)을 사용해
+    smart_project 조각 텍스처 현상을 줄인다. 배경 알파가 있으면 점색(껍질)과 합성.
+    이미지가 있을 때는 정점 노이즈를 강하게 섞지 않는다(기존 0.42 믹스는 아티팩트 유발).
+    """
     mat = bpy.data.materials.new(name=mat_name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -233,22 +269,36 @@ def _build_material_export_safe(
         vc_out = attr.outputs["Color"]
 
     if image:
+        texcoord = nodes.new("ShaderNodeTexCoord")
+        mapping = nodes.new("ShaderNodeMapping")
         tex = nodes.new("ShaderNodeTexImage")
         tex.image = image
         tex.interpolation = "Smart"
-        mix = nodes.new("ShaderNodeMixRGB")
-        mix.blend_type = "MIX"
-        mix.inputs["Fac"].default_value = 0.42
-        links.new(tex.outputs["Color"], mix.inputs["Color1"])
-        links.new(vc_out, mix.inputs["Color2"])
-        links.new(mix.outputs["Color"], bsdf.inputs["Base Color"])
+        try:
+            tex.projection = "BOX"
+            tex.projection_blend = 0.22
+        except Exception:
+            pass
+        links.new(texcoord.outputs["Object"], mapping.inputs["Vector"])
+        links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
+
+        # 투명 배경: 알파로 점색(밑색)과 합성. 불투명 JPEG 는 알파=1 → 사진 색이 그대로.
+        mix_alpha = nodes.new("ShaderNodeMixRGB")
+        mix_alpha.blend_type = "MIX"
+        links.new(vc_out, mix_alpha.inputs["Color1"])
+        links.new(tex.outputs["Color"], mix_alpha.inputs["Color2"])
+        if "Alpha" in tex.outputs:
+            links.new(tex.outputs["Alpha"], mix_alpha.inputs["Fac"])
+        else:
+            mix_alpha.inputs["Fac"].default_value = 1.0
+        links.new(mix_alpha.outputs["Color"], bsdf.inputs["Base Color"])
     else:
         links.new(vc_out, bsdf.inputs["Base Color"])
 
     if "Roughness" in bsdf.inputs:
-        bsdf.inputs["Roughness"].default_value = 0.48
+        bsdf.inputs["Roughness"].default_value = 0.56
     if "Specular IOR Level" in bsdf.inputs:
-        bsdf.inputs["Specular IOR Level"].default_value = 0.45
+        bsdf.inputs["Specular IOR Level"].default_value = 0.35
     links.new(bsdf.outputs["BSDF"], out_node.inputs["Surface"])
 
     return mat
@@ -349,6 +399,7 @@ def run_fruit_class_mesh_export(cfg: Dict[str, Any]) -> None:
                 _apply_shape(obj, size, obl)
                 _apply_bump(obj, bump, seed)
                 _decimate_if_needed(obj, max_faces=10000)
+                _mesh_cleanup(obj)
                 _uv_sphere_or_smart(obj)
                 _vertex_paint_disease(obj, class_norm, seed)
 

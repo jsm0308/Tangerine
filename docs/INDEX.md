@@ -7,7 +7,9 @@
 | [Conveyor_Lab/docs/CONVEYOR.md](../Conveyor_Lab/docs/CONVEYOR.md) | 컨베이어 실험·실행(스크립트·산출은 `Conveyor_Lab/`); [CONVEYOR_DEMO.md](CONVEYOR_DEMO.md)는 이쪽으로 안내 |
 | [SERAPH.md](SERAPH.md) | **Seraph 한 문서:** 로컬 vs 서버, Git 동기화, SSH·Conda·Blender, 실행, 변종 GLB 빌드 |
 | [DISEASE_MATERIALS.md](DISEASE_MATERIALS.md) | 병해 클래스별 절차 재질 스펙·조절 키·품질 팁 |
+| [3D_GENERATION_NOTES.md](3D_GENERATION_NOTES.md) | **3D(절차) 생성** 현재 방식·반복 시도 기록·한계 (프로토타입) |
 | [future_extensions.txt](future_extensions.txt) | 향후 확장 메모 |
+| [TANGERINE_2D_AI.md](TANGERINE_2D_AI.md) | **2D 분류(`Tangerine_2D_AI`)** 실험 설계·Q&A, Colab 로그 동작 |
 
 루트 [README.md](../README.md) — 레포 개요·빠른 실행·컨베이어 한 줄 요약.
 

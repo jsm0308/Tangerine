@@ -1,0 +1,11 @@
+{
+  "fruits_root": "C:\\Users\\Gram\\Desktop\\AirLab\\Tangerine\\data\\Tangerine_2D",
+  "mesh_paths": [
+    "C:\\Users\\Gram\\Desktop\\AirLab\\Tangerine\\Generate_Tangerine_3D\\procedural_track\\mesh_bases\\tangerine0.glb",
+    "C:\\Users\\Gram\\Desktop\\AirLab\\Tangerine\\Generate_Tangerine_3D\\procedural_track\\mesh_bases\\tangerine1.glb",
+    "C:\\Users\\Gram\\Desktop\\AirLab\\Tangerine\\Generate_Tangerine_3D\\procedural_track\\mesh_bases\\tangerine2.glb"
+  ],
+  "output_root": "C:\\Users\\Gram\\Desktop\\AirLab\\Tangerine\\data\\Tangerine_3D\\glb_from_2d",
+  "total_exports": 15,
+  "resume": false
+}

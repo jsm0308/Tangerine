@@ -3,7 +3,8 @@
 병해 재질 — 프롬프트 스펙 기반 절차적 노드(Blender Cycles).
 
 glTF/Windows 3D Viewer 호환: `generate_variants.py`가 내보내기 전
-`gltf_material_bake.simplify_materials_for_gltf_export`로 EMIT 베이크한다.
+`gltf_material_bake.simplify_materials_for_gltf_export`로 알베도 EMIT·거칠기(그레이)·
+접선 노멀(지오메트리)을 베이크해 단순 PBR 재질로 바꾼다.
 (미베이크 시 절차 노드가 끊겨 알베도가 흰색으로 보일 수 있음.)
 
 Dispatcher: apply_disease_material(obj, disease: str, disease_params: dict)

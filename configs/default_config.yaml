@@ -9,7 +9,7 @@ experiment:
 blender:
   # Windows 기본 설치 (5.x). 다른 위치면 수정하세요.
   blender_executable: "C:/Program Files/Blender Foundation/Blender 5.1/blender.exe"
-  assets_root: "data/Tangerine_3D"
+  assets_root: "Generate_Tangerine_3D/procedural_track"
   citrus_count_min: 2
   citrus_count_max: 4
   belt_speed: 1.2

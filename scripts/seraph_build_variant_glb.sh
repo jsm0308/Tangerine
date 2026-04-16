@@ -44,4 +44,4 @@ python scripts/build_base_mesh.py
 echo "[seraph_build_variant_glb] generate_variants_build"
 python scripts/generate_variants_build.py
 
-echo "[seraph_build_variant_glb] done → outputs/_variant_glb/ manifest.json"
+echo "[seraph_build_variant_glb] done → data/Tangerine_3D/glb_procedural/ manifest.json"

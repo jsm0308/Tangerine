@@ -94,7 +94,7 @@ Blender가 PATH에 없으면 `--blender` 또는 환경 변수 `BLENDER_EXECUTABL
 python Conveyor_Lab/scripts/export_conveyor_glb.py --out Conveyor_Lab/outputs/glb/conveyor_belt.glb
 ```
 
-게임/에셋 파이프라인용으로 `data/Tangerine_3D/glb/` 에 두려면 `--out data/Tangerine_3D/glb/conveyor_belt.glb` 로 지정하면 된다.
+게임/에셋 파이프라인용으로 `Generate_Tangerine_3D/procedural_track/mesh_bases/` 에 두려면 `--out Generate_Tangerine_3D/procedural_track/mesh_bases/conveyor_belt.glb` 로 지정하면 된다.
 
 `--overrides x.json`으로 위와 **같은 키**로 덮어쓴다. 산출: `.glb` + `conveyor_glb_export.json`.
 

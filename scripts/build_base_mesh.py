@@ -3,12 +3,12 @@
 베이스 GLB 3종 생성 (단일 프리미티브, 꼭지 없음).
 
   python scripts/build_base_mesh.py
-  python scripts/build_base_mesh.py --config data/Tangerine_3D/configs/base_mesh.yaml
+  python scripts/build_base_mesh.py --config Generate_Tangerine_3D/procedural_track/configs/base_mesh.yaml
 
-설정: data/Tangerine_3D/configs/base_mesh.yaml
+설정: Generate_Tangerine_3D/procedural_track/configs/base_mesh.yaml
 Blender: configs/default_config.yaml 의 blender_executable
 
-산출: base_mesh.yaml 의 output_dir (기본 data/Tangerine_3D/glb/*.glb)
+산출: base_mesh.yaml 의 output_dir (기본 Generate_Tangerine_3D/procedural_track/mesh_bases/*.glb)
 """
 
 from __future__ import annotations
@@ -41,8 +41,13 @@ def _blender_exe(cfg) -> str:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Build base fruit GLBs from data/Tangerine_3D/configs/base_mesh.yaml")
-    p.add_argument("--config", default="data/Tangerine_3D/configs/base_mesh.yaml")
+    p = argparse.ArgumentParser(
+        description="Build base fruit GLBs from Generate_Tangerine_3D/procedural_track/configs/base_mesh.yaml",
+    )
+    p.add_argument(
+        "--config",
+        default="Generate_Tangerine_3D/procedural_track/configs/base_mesh.yaml",
+    )
     p.add_argument("--pipeline-config", default="configs/default_config.yaml")
     args = p.parse_args()
 
@@ -71,7 +76,7 @@ def main() -> int:
         print("Blender 경로를 configs/default_config.yaml 에 설정하세요.", file=sys.stderr)
         return 1
 
-    out_root = data.get("output_dir", "data/Tangerine_3D/glb")
+    out_root = data.get("output_dir", "Generate_Tangerine_3D/procedural_track/mesh_bases")
     out_root_p = Path(out_root)
     if not out_root_p.is_absolute():
         out_root_p = (ROOT / out_root_p).resolve()
