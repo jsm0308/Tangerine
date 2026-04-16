@@ -28,7 +28,7 @@ Tangerine/
 ├── Generate_Tangerine_3D/   # 3D 생성 2트랙: procedural_track (설정·베이스 메시), from_2d_track (2D→3D)
 ├── data/
 │   └── Tangerine_3D/         # 최종 GLB만: glb_procedural / glb_from_2d
-├── CONFIG_KEYS.md          # 설정 키 참조표
+├── configs/CONFIG_KEYS.md  # 설정 키 참조표
 ├── requirements.txt
 ├── README.md                 # 이 파일
 ├── Conveyor_Lab/           # 롤러 컨베이어 실험: 스크립트·문서·기본 산출 (코드는 src/blender_sim/conveyor/)
@@ -36,8 +36,6 @@ Tangerine/
 │   ├── PIPELINE.md           # 전체 파이프라인 상세
 │   ├── REPOSITORY.md         # 핵심 폴더·파일 안내
 │   └── …                     # CONVEYOR_DEMO(리다이렉트), SERAPH, DISEASE_MATERIALS 등 (INDEX.md)
-├── assets/
-│   └── README.txt            # → data/Tangerine_3D · Generate_Tangerine_3D 안내
 ├── scripts/
 │   ├── healthy_variants_build.py # 81종 형태 GLB + healthy 텍스처 배치
 │   ├── build_base_mesh.py         # (선택) 아이코스피어 베이스 → procedural_track/mesh_bases
@@ -99,7 +97,7 @@ python main.py --stage all --config configs/default_config.yaml
 ### 컨베이어 데모 (`Conveyor_Lab/`)
 
 - **한 문서로 정리**: [Conveyor_Lab/docs/CONVEYOR.md](Conveyor_Lab/docs/CONVEYOR.md) — 루트 `scripts/run_conveyor_demo.py` 는 동일 스크립트로 연결  
-- **Seraph·Git·SSH**: [docs/SERAPH.md](docs/SERAPH.md) — 컨베이어 예시는 그 문서 §8, 스니펫은 `local/ssh_config_snippet_aurora_seraph.txt`
+- **Seraph·Git·SSH**: [docs/SERAPH.md](docs/SERAPH.md) — 컨베이어·원격 빌드 요약; 트랙별 세부는 [Generate_Tangerine_3D/from_2d_track/README.md](Generate_Tangerine_3D/from_2d_track/README.md)
 
 ---
 
@@ -118,7 +116,7 @@ python main.py --stage all --config configs/default_config.yaml
 ## 설정
 
 - 전역: `config.py` + `configs/default_config.yaml`  
-- 키 설명: [CONFIG_KEYS.md](CONFIG_KEYS.md)  
+- 키 설명: [configs/CONFIG_KEYS.md](configs/CONFIG_KEYS.md)  
 - 클래스 이름 `inference.class_names` 는 분류기 출력 차원·Blender GT 클래스와 **순서·이름을 맞출 것**.
 
 ---
@@ -132,8 +130,7 @@ python main.py --stage all --config configs/default_config.yaml
 - **[Conveyor_Lab/docs/CONVEYOR.md](Conveyor_Lab/docs/CONVEYOR.md)** — 컨베이어 데모 전용 (실행·산출·설정)  
 - **[docs/SERAPH.md](docs/SERAPH.md)** — **Seraph 한 문서:** 로컬 vs 서버, Git, SSH·Conda·Blender, 실행, 변종 GLB  
 - [docs/future_extensions.txt](docs/future_extensions.txt) — 확장 후보  
-- [CONFIG_KEYS.md](CONFIG_KEYS.md) — 설정 키 표  
-- [assets/README.txt](assets/README.txt) — 에셋 경로
+- [configs/CONFIG_KEYS.md](configs/CONFIG_KEYS.md) — 설정 키 표
 
 ---
 
