@@ -28,8 +28,13 @@ resume: false
 decal:
   enabled: true
   cache_dir: Generate_Tangerine_3D/from_2d_track/decal_cache
-  sam_checkpoint: ""
+  # SAM 체크포인트: https://github.com/facebookresearch/segment-anything#model-checkpoints
+  # 레포 루트에 sam_vit_b_01ec64.pth 를 두거나 절대 경로로 지정
+  sam_checkpoint: sam_vit_b_01ec64.pth
   sam_model_type: vit_b
+  # SAM 2GPU: 이미지 목록을 프로세스 2개로 나눔(워커마다 CUDA_VISIBLE_DEVICES=0 / 1)
+  sam_parallel_gpus: 2
+  sam_cuda_devices: "0,1"
   max_masks_per_image: 6
   min_mask_area_ratio: 0.0012
   max_mask_area_ratio: 0.45

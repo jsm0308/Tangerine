@@ -10,6 +10,7 @@
   SERAPH_SSH_HOST              SSH config 의 Host 별칭 (기본: aurora-seraph)
   SERAPH_REPO_ROOT             Seraph 상 레포 절대 경로 (기본: /data/minjae051213/Tangerine)
   SERAPH_CUDA_VISIBLE_DEVICES  GPU 인덱스 (기본: 0) — --cuda-device 과 동일 역할
+                               none 이면 원격에서 CUDA_VISIBLE_DEVICES 미설정 (SAM 2GPU 병렬용)
 
 원격에 필요한 것:
   conda env(tangerine)·Blender·data/Tangerine_2D·data/Tangerine_3D/tangerine_0~2.glb
@@ -60,7 +61,7 @@ def main() -> int:
         "--cuda-device",
         default=os.environ.get("SERAPH_CUDA_VISIBLE_DEVICES", "0"),
         metavar="ID",
-        help="원격에서 export CUDA_VISIBLE_DEVICES 값 (기본: 0)",
+        help="원격 CUDA_VISIBLE_DEVICES (기본: 0). none=미설정 — from_2d_batch.yaml 의 sam_parallel_gpus>1 일 때",
     )
     p.add_argument(
         "--remote-pre",
@@ -88,8 +89,10 @@ def main() -> int:
 
     gpu_block = ""
     if not args.cpu_only:
-        dev_q = shlex.quote(str(args.cuda_device))
-        gpu_block = f'export CUDA_VISIBLE_DEVICES={dev_q}\nexport NVIDIA_VISIBLE_DEVICES=all\n'
+        dev_raw = str(args.cuda_device).strip().lower()
+        if dev_raw not in ("none", "no", "-", "off", "all"):
+            dev_q = shlex.quote(str(args.cuda_device))
+            gpu_block = f'export CUDA_VISIBLE_DEVICES={dev_q}\nexport NVIDIA_VISIBLE_DEVICES=all\n'
 
     remote_script = f"""set -euo pipefail
 echo "[remote] host=$(hostname) time=$(date -Iseconds 2>/dev/null || date)"
@@ -122,7 +125,12 @@ echo "[remote] build_glb_from_2d done → data/Tangerine_3D/glb_from_2d + decal_
     )
     print(" ".join(cmd[:4]), "…", file=sys.stderr)
     if not args.cpu_only:
-        print(f"[seraph] 원격 CUDA_VISIBLE_DEVICES={args.cuda_device}", file=sys.stderr)
+        msg = (
+            f"[seraph] 원격 CUDA_VISIBLE_DEVICES={args.cuda_device}"
+            if str(args.cuda_device).strip().lower() not in ("none", "no", "-", "off", "all")
+            else "[seraph] 원격 CUDA_VISIBLE_DEVICES 미설정 (SAM 다중 GPU 병렬)"
+        )
+        print(msg, file=sys.stderr)
     sys.stderr.flush()
     r = subprocess.run(cmd, stdin=sys.stdin)
     return r.returncode

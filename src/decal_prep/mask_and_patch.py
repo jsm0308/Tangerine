@@ -11,6 +11,8 @@
 from __future__ import annotations
 
 import json
+import multiprocessing as mp
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +30,9 @@ def load_decal_config_defaults() -> Dict[str, Any]:
         "cache_dir": "Generate_Tangerine_3D/from_2d_track/decal_cache",
         "sam_checkpoint": "",
         "sam_model_type": "vit_b",
+        # SAM 병렬: 1이면 순차. 2 이상이면 이미지를 N개 프로세스로 나누고 sam_cuda_devices 와 매칭
+        "sam_parallel_gpus": 1,
+        "sam_cuda_devices": "0",
         "max_masks_per_image": 6,
         "min_mask_area_ratio": 0.0012,
         "max_mask_area_ratio": 0.45,
@@ -114,6 +119,10 @@ def _heuristic_lesion_masks(
     return masks[:max_masks]
 
 
+# 프로세스당 SAM 가중치만 재사용 (제너레이터는 이미지 크기별 min_mask_region_area 때문에 매번 생성)
+_sam_model_cache: Optional[Tuple[str, str, Any]] = None  # (checkpoint, model_type, sam_module)
+
+
 def _sam_masks(
     rgb: np.ndarray,
     checkpoint: str,
@@ -122,6 +131,7 @@ def _sam_masks(
     max_area_ratio: float,
     max_masks: int,
 ) -> List[np.ndarray]:
+    global _sam_model_cache
     try:
         import torch
         from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
@@ -133,8 +143,14 @@ def _sam_masks(
         return []
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    sam = sam_model_registry[model_type](checkpoint=str(ck))
-    sam.to(device=device)
+    ck_str = str(ck.resolve())
+    if _sam_model_cache and _sam_model_cache[0] == ck_str and _sam_model_cache[1] == model_type:
+        sam = _sam_model_cache[2]
+    else:
+        sam = sam_model_registry[model_type](checkpoint=ck_str)
+        sam.to(device=device)
+        _sam_model_cache = (ck_str, model_type, sam)
+
     try:
         gen = SamAutomaticMaskGenerator(
             sam,
@@ -302,6 +318,43 @@ def _process_one_image(
     return patch_names
 
 
+def _chunk_jobs(
+    jobs: List[Tuple[Path, str, Path, str]], n_workers: int
+) -> List[List[Tuple[Path, str, Path, str]]]:
+    if not jobs:
+        return []
+    n_workers = max(1, min(n_workers, len(jobs)))
+    q, r = divmod(len(jobs), n_workers)
+    out: List[List[Tuple[Path, str, Path, str]]] = []
+    i = 0
+    for k in range(n_workers):
+        sz = q + (1 if k < r else 0)
+        out.append(jobs[i : i + sz])
+        i += sz
+    return out
+
+
+def _decal_worker_chunk(
+    jobs_ser: List[Tuple[str, str, str, str]],
+    decal_cfg: Dict[str, Any],
+    cuda_dev: str,
+) -> Dict[str, Any]:
+    """spawn 워커: 프로세스마다 한 GPU만 보이게 한 뒤 이미지 청크 처리."""
+    if cuda_dev.strip():
+        os.environ["CUDA_VISIBLE_DEVICES"] = cuda_dev.strip()
+    images: Dict[str, Any] = {}
+    for img_path_s, rel, img_dir_s, cname in jobs_ser:
+        img_path = Path(img_path_s)
+        img_dir = Path(img_dir_s)
+        patches = _process_one_image(img_path, rel, img_dir, decal_cfg)
+        rel_patch_paths = [f"{cname}/{p}" for p in patches]
+        images[rel] = {
+            "absolute_source": str(img_path.resolve()),
+            "patches": rel_patch_paths,
+        }
+    return images
+
+
 @dataclass
 class DecalCacheResult:
     manifest: Dict[str, Any]
@@ -328,14 +381,47 @@ def build_decal_cache(
         "images": {},
     }
 
+    sam_ck = (decal_cfg.get("sam_checkpoint") or "").strip()
+    n_par = max(1, int(decal_cfg.get("sam_parallel_gpus") or 1))
+    dev_str = (decal_cfg.get("sam_cuda_devices") or "0").strip()
+    device_list = [x.strip() for x in dev_str.split(",") if x.strip()]
+    if not device_list:
+        device_list = ["0"]
+
     class_dirs = sorted([p for p in fruits_root.iterdir() if p.is_dir()], key=lambda p: p.name.lower())
     for class_dir in class_dirs:
         cname = _safe_key(class_dir.name)
         img_dir = cache_root / cname
         img_dir.mkdir(parents=True, exist_ok=True)
 
+    jobs: List[Tuple[Path, str, Path, str]] = []
+    for class_dir in class_dirs:
+        cname = _safe_key(class_dir.name)
+        img_dir = cache_root / cname
         for img_path in _list_images(class_dir):
             rel = f"{class_dir.name}/{img_path.name}"
+            jobs.append((img_path, rel, img_dir, cname))
+
+    use_mp = bool(sam_ck) and n_par > 1 and len(jobs) > 1
+    if use_mp:
+        n_workers = min(n_par, len(device_list), len(jobs))
+        chunks = _chunk_jobs(jobs, n_workers)
+        ctx = mp.get_context("spawn")
+        starmap_args: List[Tuple[List[Tuple[str, str, str, str]], Dict[str, Any], str]] = []
+        for wi, chunk in enumerate(chunks):
+            if not chunk:
+                continue
+            cuda_dev = device_list[wi % len(device_list)]
+            ser = [(str(a[0]), a[1], str(a[2]), a[3]) for a in chunk]
+            starmap_args.append((ser, decal_cfg, cuda_dev))
+        manifest_images: Dict[str, Any] = {}
+        with ctx.Pool(processes=len(starmap_args)) as pool:
+            results = pool.starmap(_decal_worker_chunk, starmap_args)
+        for part in results:
+            manifest_images.update(part)
+        manifest["images"] = manifest_images
+    else:
+        for img_path, rel, img_dir, cname in jobs:
             patches = _process_one_image(img_path, rel, img_dir, decal_cfg)
             rel_patch_paths = [f"{cname}/{p}" for p in patches]
             manifest["images"][rel] = {

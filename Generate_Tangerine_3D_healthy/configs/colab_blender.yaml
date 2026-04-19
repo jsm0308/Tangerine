@@ -1,0 +1,3 @@
+# Colab에서 레포 전체를 쓸 때만 참고. 이 패키지는 BLENDER_EXE 또는 PATH 의 blender 를 씀.
+blender:
+  blender_executable: "/usr/bin/blender"

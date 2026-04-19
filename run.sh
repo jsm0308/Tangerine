@@ -1,8 +1,6 @@
-#!/bin/bash
-#SBATCH -p batch_ugrad        # 사용할 파티션
-#SBATCH --account=[내_어카운트] # 필수: sshare -U minjae051213 로 확인한 이름
-#SBATCH --gres=gpu:1          # GPU 개수
-#SBATCH -o result.out         # 결과가 저장될 파일명
-
-# 내 파이썬 코드 실행
-python train_tangerine_2d.py
+cd /Seraph/상/레포/Tangerine 경로   # 실제 절대경로
+source "$HOME/miniconda3/etc/profile.d/conda.sh"  # 서버 conda 경로에 맞게
+conda activate tangerine
+export PYTHONUNBUFFERED=1
+export CUDA_VISIBLE_DEVICES=0
+python scripts/build_glb_from_2d.py --config Generate_Tangerine_3D/from_2d_track/configs/from_2d_batch.yamlㅋ`

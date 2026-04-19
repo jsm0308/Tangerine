@@ -2,6 +2,8 @@
 
 기본은 **`data/Tangerine_2D/`** (ImageFolder: 클래스별 하위 폴더·이미지). 다른 루트는 `from_2d_batch.yaml` 의 `fruits_root` 로 지정.
 
+**Google Colab** 에서 데칼 캐시(패치·manifest)만 만들 때는 레포 루트의 [`Colab_From2D/`](../../Colab_From2D/README.md) 폴더와 `Colab_From2D.ipynb` 를 사용한다 (이미지는 그 안의 `uploads/Tangerine_2D/` 에 직접 업로드).
+
 ### Healthy 먼저 (권장 순서)
 
 1. **베이스 메쉬**는 이미 healthy용 `tangerine_0~2.glb` (`mesh_paths`, 기본 `data/Tangerine_3D/` 루트).
@@ -52,6 +54,8 @@ pip install -r requirements.txt -r requirements-decal.txt
 
 체크포인트 경로를 `from_2d_batch.yaml` 의 `decal.sam_checkpoint` 에 지정.
 
+**GPU 2장으로 SAM 병렬:** `decal.sam_parallel_gpus: 2` 와 `decal.sam_cuda_devices: "0,1"` 을 쓰면 이미지 목록이 프로세스 두 개로 나뉘고, 각 워커가 GPU 한 장만 보도록 `CUDA_VISIBLE_DEVICES` 를 나눈다. Seraph 원격에서는 기본 `--cuda-device 0` 이 전체를 한 장으로만 묶으므로, 이때는 `python scripts/seraph_build_glb_from_2d_remote.py --cuda-device none` 으로 원격에서 GPU 필터를 걸지 않는 편이 낫다.
+
 ## Seraph에서 돌리기 (로컬 CPU 부담 완화)
 
 **가능하다.** 로컬 CPU로 `build_glb_from_2d.py` 를 돌리지 말고, SSH로 Seraph에서 실행한다 ([`scripts/seraph_build_glb_from_2d_remote.py`](../../scripts/seraph_build_glb_from_2d_remote.py)). 스크립트가 원격에서 `CUDA_VISIBLE_DEVICES` 를 잡아 PyTorch(SAM 등)·CUDA를 쓰기 쉽게 한다.
@@ -60,6 +64,7 @@ pip install -r requirements.txt -r requirements-decal.txt
 python scripts/seraph_build_glb_from_2d_remote.py --pull
 # 연결만 디버그:  python scripts/seraph_build_glb_from_2d_remote.py --ssh-v --pull
 # GPU 여러 대 중 특정 번호:  python scripts/seraph_build_glb_from_2d_remote.py --cuda-device 1
+# SAM 2GPU 병렬:           python scripts/seraph_build_glb_from_2d_remote.py --cuda-device none
 # Slurm/module 등:           --remote-pre 'module load cuda/12.1'  (또는 SERAPH_REMOTE_PRE_CMD)
 ```
 
@@ -72,7 +77,7 @@ python scripts/seraph_build_glb_from_2d_remote.py --pull
 ## 설정 키 (`from_2d_batch.yaml`)
 
 - `fruits_root`, `mesh_paths` (적어도 1개는 **실제 존재하는 파일**; 없으면 실패 — `data/` 자동 폴백 없음), `output_dir`, `total_exports`, `resume`
-- `decal.*`: `enabled`, `cache_dir`, `sam_checkpoint`, `stamps_per_asset`, `texture_resolution`, `stamp_uv_radius`, `use_healthy_albedo_base`, 마스크 면적·페더 등
+- `decal.*`: `enabled`, `cache_dir`, `sam_checkpoint`, `sam_parallel_gpus`, `sam_cuda_devices`, `stamps_per_asset`, `texture_resolution`, `stamp_uv_radius`, `use_healthy_albedo_base`, 마스크 면적·페더 등
 
 ## 트랙 1과의 차이
 

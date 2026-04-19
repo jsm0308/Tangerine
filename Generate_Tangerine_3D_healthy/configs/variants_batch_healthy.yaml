@@ -1,0 +1,62 @@
+# 건강 귤만 — 3^5 = 243개
+# 실행 (이 패키지 루트에서):
+#   python run_generate_healthy.py --dry-run
+#   python run_generate_healthy.py --no-clean
+#
+# 기존 병해·다른 폴더 GLB 는 지우지 않음 → --no-clean 권장
+
+merge_existing_manifest: true
+
+glb_sources:
+  - name: tangerine0
+    path: data/Tangerine_3D/tangerine_0.glb
+  - name: tangerine1
+    path: data/Tangerine_3D/tangerine_1.glb
+  - name: tangerine2
+    path: data/Tangerine_3D/tangerine_2.glb
+
+output_dir: data/Tangerine_3D/glb_procedural
+
+gltf_bake_size: 2048
+gltf_bake_samples: 96
+gltf_bake_roughness: true
+gltf_bake_normal: true
+gltf_prefer_native_roughness: true
+
+random_seed: 42
+
+output_name_style: full
+
+size_variants:
+  values: [0.88, 1.0, 1.12]
+
+height_variants:
+  values: [0.95, 1.0, 1.05]
+
+squish_variants:
+  - label: round
+    scale_xy: 1.0
+    scale_z: 1.0
+  - label: oblate
+    scale_xy: 1.012
+    scale_z: 0.988
+  - label: prolate
+    scale_xy: 0.988
+    scale_z: 1.012
+
+color_variants:
+  - label: warm
+    rgb_mul: [1.06, 0.94, 0.88, 1.0]
+    roughness_mul: 0.98
+  - label: neutral
+    rgb_mul: [1.0, 1.0, 1.0, 1.0]
+    roughness_mul: 1.0
+  - label: yellow_green
+    rgb_mul: [0.97, 1.05, 0.93, 1.0]
+    roughness_mul: 1.02
+
+disease_params:
+  healthy:
+    base_color: [0.85, 0.35, 0.05, 1.0]
+    roughness: 0.22
+    specular: 0.50

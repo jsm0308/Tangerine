@@ -26,6 +26,7 @@ Tangerine/
 │   ├── README.txt            # default_config 역할
 │   └── default_config.yaml   # 전역 파이프라인 + Blender 경로
 ├── Generate_Tangerine_3D/   # 3D 생성 2트랙: procedural_track (설정·베이스 메시), from_2d_track (2D→3D)
+├── Colab_From2D/            # Google Colab: 데칼 패치 캐시만 (이미지는 uploads/Tangerine_2D/에 업로드)
 ├── data/
 │   └── Tangerine_3D/         # 최종 GLB만: glb_procedural / glb_from_2d
 ├── configs/CONFIG_KEYS.md  # 설정 키 참조표
