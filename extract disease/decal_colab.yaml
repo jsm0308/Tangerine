@@ -1,0 +1,24 @@
+# =============================================================================
+# Colab_From2D — 병변 패치 캐시 전용 설정 (경로는 Colab_From2D 폴더 기준)
+# =============================================================================
+# 이미지는 직접 업로드: uploads/Tangerine_2D/<클래스폴더명>/*.jpg|png|...
+# torchvision ImageFolder 와 동일 — 클래스마다 하위 폴더 필수
+# =============================================================================
+
+fruits_root: uploads/Tangerine_2D
+
+decal:
+  cache_dir: output/decal_cache
+  # SAM 가중치 파일 — checkpoints/ 에 두거나, 아래를 절대 경로로 바꿔도 됨
+  # 다운로드: https://github.com/facebookresearch/segment-anything#model-checkpoints
+  # ViT-B 권장 파일명: sam_vit_b_01ec64.pth
+  sam_checkpoint: checkpoints/sam_vit_b_01ec64.pth
+  sam_model_type: vit_b
+  # Colab 무료: GPU 1개 → 1 유지. A100 2개 등이면 2 와 sam_cuda_devices: "0,1"
+  sam_parallel_gpus: 1
+  sam_cuda_devices: "0"
+  max_masks_per_image: 6
+  min_mask_area_ratio: 0.0012
+  max_mask_area_ratio: 0.45
+  alpha_feather_px: 6.0
+  poisson_seamless_clone: true

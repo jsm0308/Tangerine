@@ -1,0 +1,9 @@
+# Colab: pip install -r requirements-colab.txt
+# Colab에는 torch 가 이미 있을 수 있으나, rembg / opencv / yaml / segment_anything 은 추가 설치.
+
+opencv-python-headless>=4.8.0
+numpy>=1.23.0
+PyYAML>=6.0
+Pillow>=9.0.0
+rembg>=2.0.50
+git+https://github.com/facebookresearch/segment-anything.git

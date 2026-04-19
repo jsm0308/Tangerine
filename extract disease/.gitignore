@@ -1,0 +1,8 @@
+# SAM 가중치 (용량 큼 — Colab에서 wget 권장)
+checkpoints/*.pth
+
+# 업로드한 이미지·산출물은 커밋하지 않음 (필요 시 주석 해제)
+uploads/Tangerine_2D/**/*
+!uploads/Tangerine_2D/.gitkeep
+output/**/*
+!output/decal_cache/.gitkeep
